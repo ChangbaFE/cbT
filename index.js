@@ -329,18 +329,18 @@ const core = {
 
   _getBlocks(content) {
     let blocks = {};
-  	let match = null;
+    let match = null;
     let pattern = this._createMatcher('block');
 
-  	while ((match = pattern.exec(content)) !== null) {
+    while ((match = pattern.exec(content)) !== null) {
       if (match && match[2]) {
         let param = match[2].trim().split(/\s+/);
 
         blocks[param[0]] = match[3];
       }
-  	}
+    }
 
-  	return blocks;
+    return blocks;
   },
 
   _parseParentBlock(templateData, content, blocks) {
