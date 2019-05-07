@@ -777,7 +777,6 @@ const core = {
     return str;
   }
 
-  // Helpers
 };
 
 module.exports = Object.assign({
