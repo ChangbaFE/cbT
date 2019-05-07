@@ -448,9 +448,9 @@ const core = {
     let blocks = {};
     let match = null;
 
-  	while ((match = pattern.exec(content)) !== null) {
+    while ((match = pattern.exec(content)) !== null) {
       blocks[match[2]] = match[3];
-  	}
+    }
 
     if (content.match(pattern)) {
       let plainContent = content.replace(pattern, '');
@@ -493,9 +493,9 @@ const core = {
       let blocks = {};
       let match = null;
 
-    	while ((match = /(\S+?)="(.*?)"/.exec(params[1])) != null) {
+      while ((match = /(\S+?)="(.*?)"/.exec(params[1])) != null) {
         blocks[match[1]] = match[2];
-    	}
+      }
 
       return blocksContent[name].replace(patternSlot, (match, p1, p2, p3) => {
         return blocks[p2] ? blocks[p2] : p3;
@@ -522,13 +522,13 @@ const core = {
       let blocks = {};
       let match = null;
 
-    	while ((match = /(\S+?)="(.*?)"/.exec(params[1])) !== null) {
+      while ((match = /(\S+?)="(.*?)"/.exec(params[1])) !== null) {
         blocks[match[1]] = match[2];
-    	}
+      }
 
       while ((match = patternSlot.exec(p3)) !== null) {
         blocks[match[2]] = match[3];
-    	}
+      }
 
       return blocksContent[name].replace(patternSlot, (match, slotP1, slotP2, slotP3) => {
         if (slotP2 == '') {
@@ -558,7 +558,7 @@ const core = {
   },
 
   _compileFromString(str) {
-    let funcBody = `
+    let funBody = `
       let ${TEMPLATE_OUT} = '';
       ((${TEMPLATE_OBJECT}, ${SUB_TEMPLATE}) => {
         if (${SUB_TEMPLATE}) {
@@ -580,12 +580,15 @@ const core = {
       return ${TEMPLATE_OUT};
     `;
 
-    // console.log(funcBody.replace(/\\n/g, '\n'));
+    // console.log(funBody.replace(/\\n/g, '\n'));
 
     // 删除无效指令
-    funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
+    funBody = funBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
+    // 这个优化不保险，先注释掉
+    //funBody = funBody.replace(/\}\)\}else\{cbTemplate\.run\(function\(\)\{(.+?)\}\)\}/g, '})}else{$1}');
+    //console.log(funBody);
 
-    const func = new Function(TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
+    const func = new Function(TEMPLATE_OBJECT, SUB_TEMPLATE, funBody);
 
     return (templateObject, subTemplate) => {
       return func.call(helpers, templateObject, subTemplate);
