@@ -558,7 +558,7 @@ const core = {
   },
 
   _compileFromString(str) {
-    let funBody = `
+    let funcBody = `
       let ${TEMPLATE_OUT} = '';
       ((${TEMPLATE_OBJECT}, ${SUB_TEMPLATE}) => {
         if (${SUB_TEMPLATE}) {
@@ -580,15 +580,12 @@ const core = {
       return ${TEMPLATE_OUT};
     `;
 
-    // console.log(funBody.replace(/\\n/g, '\n'));
+    // console.log(funcBody.replace(/\\n/g, '\n'));
 
     // 删除无效指令
-    funBody = funBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
-    // 这个优化不保险，先注释掉
-    //funBody = funBody.replace(/\}\)\}else\{cbTemplate\.run\(function\(\)\{(.+?)\}\)\}/g, '})}else{$1}');
-    //console.log(funBody);
+    funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
 
-    const func = new Function(TEMPLATE_OBJECT, SUB_TEMPLATE, funBody);
+    const func = new Function(TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
 
     return (templateObject, subTemplate) => {
       return func.call(helpers, templateObject, subTemplate);
