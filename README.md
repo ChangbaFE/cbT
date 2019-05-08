@@ -5,7 +5,7 @@
 ## 安装
 
 ```bash
-$ npm install changba-template
+$ npm install cb-template
 ```
 
 ## 特性
@@ -24,7 +24,7 @@ $ npm install changba-template
 ## 使用
 
 ```javascript
-const cbT = require('changba-template');
+const cbT = require('cb-template');
 
 let template = cbT.template(str);
 template(data);
