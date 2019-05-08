@@ -1,0 +1,25 @@
+{
+  "name": "cb-template",
+  "version": "1.0.7",
+  "description": "唱吧模板引擎",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChangbaFE/cbT.git"
+  },
+  "keywords": [
+    "template"
+  ],
+  "author": "Hex",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ChangbaFE/cbT/issues"
+  },
+  "homepage": "https://github.com/ChangbaFE/cbT#readme",
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  }
+}

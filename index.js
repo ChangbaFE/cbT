@@ -35,7 +35,7 @@ const getFileTime = (filename) => {
   catch (e) {
     return 0;
   }
-}
+};
 
 const mkdirp = (p, opts, made) => {
   if (!opts || typeof opts !== 'object') {
@@ -58,6 +58,8 @@ const mkdirp = (p, opts, made) => {
     made = made || p;
   }
   catch (err0) {
+    let stat;
+
     switch (err0.code) {
       case 'ENOENT':
         made = mkdirp(path.dirname(p), opts, made);
@@ -68,7 +70,6 @@ const mkdirp = (p, opts, made) => {
       // there already.  If so, then hooray!  If not, then something
       // is borked.
       default:
-        let stat;
         try {
           stat = fs.statSync(p);
         }
@@ -125,7 +126,7 @@ const helpers = {
 
     if (Array.isArray(source)) {
       source.forEach((item) => {
-        let tmp = String(item).trim();
+        const tmp = String(item).trim();
 
         if (tmp !== '') {
           result.push(this.encodeHTML(tmp));
@@ -142,7 +143,7 @@ const helpers = {
   },
 
   isEmptyObject(obj) {
-    for (let name in obj) {
+    for (const name in obj) {
       return false;
     }
 
@@ -204,9 +205,9 @@ const core = {
   },
 
   renderFile(filename, data) {
-    let compiledFilename = this._makeLayout(filename);
+    const compiledFilename = this._makeLayout(filename);
 
-    return this.render(fs.readFileSync(compiledFilename).toString(), data);
+    return this._compileFromString(fs.readFileSync(compiledFilename).toString())(data);
   },
 
   getCompiledString(str) {
@@ -219,7 +220,7 @@ const core = {
   },
 
   _makeLayout(name, block = '') {
-    let templateData = {
+    const templateData = {
       depth: 0,
       templates: {},
       currentBlocks: {},
@@ -227,7 +228,7 @@ const core = {
       blocks: {}
     };
 
-    let extName = path.extname(name);
+    const extName = path.extname(name);
 
     if (!extName) {
       name += this.defaultExtName;
@@ -235,7 +236,7 @@ const core = {
 
     const baseDestPath = this.baseDestPath || path.join(os.tmpdir(), 'changba-template-cache', getHash(this.baseSrcPath));
 
-    let destFilename = path.join(baseDestPath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
+    const destFilename = path.join(baseDestPath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
 
     // 先检查是否需要重编译
     if (!this._check(destFilename)) {
@@ -243,12 +244,12 @@ const core = {
     }
 
     // 先读取文件名
-    let filename = path.join(this.baseSrcPath, name);
+    const filename = path.join(this.baseSrcPath, name);
     // TODO: 可能需要先判断文件是否存在，并给出错误信息
     let content = fs.readFileSync(filename).toString();
     templateData.templates[name] = getFileTime(filename);
 
-    let extendsName = this._getExtends(content);
+    const extendsName = this._getExtends(content);
 
     // 判断是否第一行是否有 extends 指令
     if (extendsName) {
@@ -275,15 +276,15 @@ const core = {
       return true;
     }
 
-    let contents = fs.readFileSync(filename).toString().split(/\n/);
-    let templates = JSON.parse(contents[1] || '{}');
+    const contents = fs.readFileSync(filename).toString().split(/\n/);
+    const templates = JSON.parse(contents[1] || '{}');
 
     // 检查每个文件是否过期
     // 只要有一个文件过期则重编译整个模板
-    for (let key in templates) {
-      let value = templates[key];
+    for (const key in templates) {
+      const value = templates[key];
 
-      let newTime = getFileTime(path.join(this.baseSrcPath, key));
+      const newTime = getFileTime(path.join(this.baseSrcPath, key));
       if (newTime > value) {
         // 文件有更新
         return true;
@@ -294,8 +295,8 @@ const core = {
   },
 
   _getExtends(content) {
-    let pattern = this._createOpenMatcher('extends');
-    let match = pattern.exec(content);
+    const pattern = this._createOpenMatcher('extends');
+    const match = pattern.exec(content);
 
     return match ? match[2] : '';
   },
@@ -303,23 +304,23 @@ const core = {
   _parseParent(templateData, name, subContent) {
     templateData.depth++;
 
-    let extName = path.extname(name);
+    const extName = path.extname(name);
     if (!extName) {
       name += this.defaultExtName;
     }
 
-    let filename = path.join(this.baseSrcPath, name);
+    const filename = path.join(this.baseSrcPath, name);
     let content = fs.readFileSync(filename).toString();
     templateData.templates[name] = getFileTime(filename);
 
-    let extendsName = this._getExtends(content);
+    const extendsName = this._getExtends(content);
     if (extendsName) {
       // 有 extends 指令，表示需要加载父模板
       content = this._parseParent(templateData, extendsName, content);
     }
 
     // 解析 block 指令
-    let subBlocks = this._getBlocks(subContent);
+    const subBlocks = this._getBlocks(subContent);
     content = this._parseParentBlock(templateData, content, subBlocks);
 
     templateData.depth--;
@@ -328,13 +329,13 @@ const core = {
   },
 
   _getBlocks(content) {
-    let blocks = {};
+    const blocks = {};
     let match = null;
-    let pattern = this._createMatcher('block');
+    const pattern = this._createMatcher('block');
 
     while ((match = pattern.exec(content)) !== null) {
       if (match && match[2]) {
-        let param = match[2].trim().split(/\s+/);
+        const param = match[2].trim().split(/\s+/);
 
         blocks[param[0]] = match[3];
       }
@@ -348,22 +349,22 @@ const core = {
 
     templateData.prevCurrentBlocks = Object.assign(templateData.prevCurrentBlocks, blocks);
 
-    for (let key in blocks) {
+    for (const key in blocks) {
       let value = blocks[key];
 
       value = this._commandUse(templateData, value, value);
-      value = this._commandApply(templateData, value, value, 'run');
-      value = this._commandApply(templateData, value, value);
+      value = this._commandCall(templateData, value, value, 'apply');
+      value = this._commandCall(templateData, value, value);
       value = this._commandSlot(templateData, value, value);
 
       templateData.blocks[key] = value;
     }
 
-    let pattern = this._createPlainMatcher('block');
+    const pattern = this._createPlainMatcher('block');
     content = content.replace(pattern, (match, p1, p2, p3, p4, p5) => {
-      let param = p3.trim().split(/\s+/);
-      let name = param[0];
-      let mode = param[1] ? param[1] : '';
+      const param = p3.trim().split(/\s+/);
+      const name = param[0];
+      const mode = param[1] ? param[1] : '';
 
       if (mode == 'hide' && name !== '' && !templateData.currentBlocks[name]) {
         if (templateData.depth > 1) {
@@ -376,8 +377,8 @@ const core = {
 
       if (name !== '' && templateData.currentBlocks[name]) {
         templateData.currentBlocks[name] = this._commandUse(templateData, templateData.currentBlocks[name], p4);
-        templateData.currentBlocks[name] = this._commandApply(templateData, templateData.currentBlocks[name], p4, 'run');
-        templateData.currentBlocks[name] = this._commandApply(templateData, templateData.currentBlocks[name], p4);
+        templateData.currentBlocks[name] = this._commandCall(templateData, templateData.currentBlocks[name], p4, 'apply');
+        templateData.currentBlocks[name] = this._commandCall(templateData, templateData.currentBlocks[name], p4);
 
         templateData.currentBlocks[name] = this._commandParent(templateData, templateData.currentBlocks[name], p4);
         templateData.currentBlocks[name] = this._commandChild(templateData, templateData.currentBlocks[name], p4);
@@ -394,20 +395,20 @@ const core = {
   },
 
   _writeFile(templateData, filename, data) {
-    let dir = path.dirname(filename);
+    const dir = path.dirname(filename);
 
     if (!fileExists(dir)) {
       mkdirp(dir);
     }
 
-    let prefix = this.leftDelimiter + '* changba template engine v' + this.version + '\n' + JSON.stringify(templateData.templates) + '\n*' + this.rightDelimiter;
+    const prefix = `'/* changba template engine v${this.version}\n${JSON.stringify(templateData.templates)}\n*/+'`;
 
-    fs.writeFileSync(filename, prefix + data);
+    fs.writeFileSync(filename, prefix + this._analysisStr(data));
   },
 
   _removeCommand(content) {
-    ['extends', 'block', '/block', 'parent', 'child', 'use', 'apply', '/apply', 'run', 'slot', '/slot'].forEach((item) => {
-      let pattern = this._createOpenMatcher(item);
+    ['extends', 'block', '/block', 'parent', 'child', 'use', 'apply', '/apply', 'call', '/call', 'slot', '/slot'].forEach((item) => {
+      const pattern = this._createOpenMatcher(item);
 
       content = content.replace(pattern, '');
     });
@@ -416,20 +417,19 @@ const core = {
   },
 
   _removeCommandWithContent(commend, content) {
-    let pattern = this._createMatcher(commend);
+    const pattern = this._createMatcher(commend);
 
     return content.replace(pattern, '');
   },
 
   _commandParent(templateData, content, parentContent) {
-    let pattern = this._createOpenMatcher('parent');
+    const pattern = this._createOpenMatcher('parent');
 
     return content.replace(pattern, parentContent);
   },
 
-  _commandChild(templateData, content, parentContent)
-  {
-    let pattern = this._createOpenMatcher('child');
+  _commandChild(templateData, content, parentContent) {
+    const pattern = this._createOpenMatcher('child');
 
     if (parentContent.match(pattern)) {
       content = parentContent.replace(pattern, content);
@@ -439,13 +439,13 @@ const core = {
   },
 
   _commandSlot(templateData, content, parentContent) {
-    let pattern = this._createMatcher('slot');
+    const pattern = this._createMatcher('slot');
 
     if (!parentContent.match(pattern)) {
       return content;
     }
 
-    let blocks = {};
+    const blocks = {};
     let match = null;
 
     while ((match = pattern.exec(content)) !== null) {
@@ -453,7 +453,7 @@ const core = {
     }
 
     if (content.match(pattern)) {
-      let plainContent = content.replace(pattern, '');
+      const plainContent = content.replace(pattern, '');
 
       content = parentContent.replace(pattern, (match, p1, p2, p3) => {
         if (!p2) {
@@ -466,7 +466,7 @@ const core = {
     }
     else {
       // 判断是否有默认插槽
-      let simplePattern = this._createMatcher('slot', true);
+      const simplePattern = this._createMatcher('slot', true);
 
       if (parentContent.match(simplePattern)) {
         content = parentContent.replace(simplePattern, content);
@@ -476,21 +476,21 @@ const core = {
     return content;
   },
 
-  _commandUse(templateData, content, parentContent) {
-    let pattern = this._createOpenMatcher('use');
-    let patternSlot = this._createMatcher('slot');
+  _commandUse(templateData, content) {
+    const pattern = this._createOpenMatcher('use');
+    const patternSlot = this._createMatcher('slot');
 
-    let blocksContent = templateData.prevCurrentBlocks;
+    const blocksContent = templateData.prevCurrentBlocks;
 
     content = content.replace(pattern, (p0, p1, p2) => {
-      let params = p2.split(/\s+/, 2);
-      let name = params[0];
+      const params = p2.split(/\s+/, 2);
+      const name = params[0];
 
       if (!blocksContent[name]) {
         return '';
       }
 
-      let blocks = {};
+      const blocks = {};
       let match = null;
 
       while ((match = /(\S+?)="(.*?)"/.exec(params[1])) != null) {
@@ -505,21 +505,21 @@ const core = {
     return content;
   },
 
-  _commandApply(templateData, content, parentContent, command = 'apply') {
-    let pattern = this._createMatcher(command);
-    let patternSlot = this._createMatcher('slot');
+  _commandCall(templateData, content, parentContent, command = 'call') {
+    const pattern = this._createMatcher(command);
+    const patternSlot = this._createMatcher('slot');
 
-    let blocksContent = templateData.prevCurrentBlocks;
+    const blocksContent = templateData.prevCurrentBlocks;
 
     content = content.replace(pattern, (p0, p1, p2, p3) => {
-      let params = p2.split(/\s+/, 2);
-      let name = params[0];
+      const params = p2.split(/\s+/, 2);
+      const name = params[0];
 
       if (!blocksContent[name]) {
         return '';
       }
 
-      let blocks = {};
+      const blocks = {};
       let match = null;
 
       while ((match = /(\S+?)="(.*?)"/.exec(params[1])) !== null) {
@@ -678,7 +678,7 @@ const core = {
       .replace(new RegExp(_left + "\\s*?/if\\s*?" + _right, "g"),
         `${_left_}}${_right_}`)
 
-      // 注意：必须在原生指令编译完毕再编译其他指令
+    // 注意：必须在原生指令编译完毕再编译其他指令
 
       // 定义子模板 <% define value(param) %>
       .replace(new RegExp(_left + "\\s*?define\\s+?([a-z0-9_$]+?)\\s*?\\((.*?)\\)\\s*?" + _right, "g"),
@@ -692,8 +692,8 @@ const core = {
       .replace(new RegExp(_left + "\\s*?/define\\s*?" + _right, "g"),
         `${_left_}};${_right_}`)
 
-      // 调用子模板 <% call value() %>
-      .replace(new RegExp(_left + "\\s*?call\\s+?([a-zA-Z0-9_$]+?)\\s*?\\((.*?)\\)\\s*?" + _right, "g"),
+      // 调用子模板 <% run value() %>
+      .replace(new RegExp(_left + "\\s*?run\\s+?([a-zA-Z0-9_$]+?)\\s*?\\((.*?)\\)\\s*?" + _right, "g"),
         `${_left_}if(${TEMPLATE_SUB}['$1']){${TEMPLATE_SUB}['$1']($2)}${_right_}`)
 
 
