@@ -176,7 +176,7 @@ const helpers = {
 const core = {
 
   //标记当前版本
-  version: '1.0.7',
+  version: '1.0.9',
 
   //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
   leftDelimiter: '<%',
