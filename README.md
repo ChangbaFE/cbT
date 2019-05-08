@@ -1,6 +1,6 @@
 # cbT.js
 
-[![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template)
+[![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template)
 
 一个支持模板多级继承的 Node.js 服务端模板引擎
 
