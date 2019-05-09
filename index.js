@@ -185,8 +185,8 @@ const core = {
   //自定义默认是否转义，默认为默认自动转义
   escape: true,
 
-  baseSrcPath: __dirname,
-  baseDestPath: '',
+  basePath: process.cwd(),
+  cachePath: '',
 
   defaultExtName: '.html',
 
@@ -234,9 +234,9 @@ const core = {
       name += this.defaultExtName;
     }
 
-    const baseDestPath = this.baseDestPath || path.join(os.tmpdir(), 'changba-template-cache', getHash(this.baseSrcPath));
+    const cachePath = this.cachePath || path.join(os.tmpdir(), 'changba-template-cache', getHash(this.basePath));
 
-    const destFilename = path.join(baseDestPath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
+    const destFilename = path.join(cachePath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
 
     // 先检查是否需要重编译
     if (!this._check(destFilename)) {
@@ -244,7 +244,7 @@ const core = {
     }
 
     // 先读取文件名
-    const filename = path.join(this.baseSrcPath, name);
+    const filename = path.join(this.basePath, name);
     // TODO: 可能需要先判断文件是否存在，并给出错误信息
     let content = fs.readFileSync(filename).toString();
     templateData.templates[name] = getFileTime(filename);
@@ -284,7 +284,7 @@ const core = {
     for (const key in templates) {
       const value = templates[key];
 
-      const newTime = getFileTime(path.join(this.baseSrcPath, key));
+      const newTime = getFileTime(path.join(this.basePath, key));
       if (newTime > value) {
         // 文件有更新
         return true;
@@ -309,7 +309,7 @@ const core = {
       name += this.defaultExtName;
     }
 
-    const filename = path.join(this.baseSrcPath, name);
+    const filename = path.join(this.basePath, name);
     let content = fs.readFileSync(filename).toString();
     templateData.templates[name] = getFileTime(filename);
 
