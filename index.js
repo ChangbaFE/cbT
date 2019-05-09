@@ -204,10 +204,34 @@ const core = {
     return this._compile(str)(data, subTemplate);
   },
 
-  renderFile(filename, data) {
+  renderFileSync(filename, data) {
     const compiledFilename = this._makeLayout(filename);
 
     return this._compileFromString(fs.readFileSync(compiledFilename).toString())(data);
+  },
+
+  renderFile(filename, data, callback) {
+    const compiledFilename = this._makeLayout(filename);
+
+    fs.readFile(compiledFilename, (err, fileData) => {
+      if (err) {
+        callback(err, '');
+
+        return;
+      }
+
+      let result = '';
+
+      try {
+        result = this._compileFromString(fileData.toString())(data);
+      }
+      catch (e) {
+        err = e;
+        result = '';
+      }
+
+      callback(err, result);
+    });
   },
 
   getCompiledString(str) {
