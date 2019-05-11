@@ -49,7 +49,7 @@ cbT.renderFile(filename, data);
 #### extends 标签
 
 ```
-<% extends 视图路径 %>
+<% extends 模板路径 %>
 ```
 
 例如 `<% extends welcome/test %>`
