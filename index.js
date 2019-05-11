@@ -33,7 +33,7 @@ const getFileTime = (filename) => {
     return fs.statSync(filename).mtime.getTime();
   }
   catch (e) {
-    return 0;
+    return -1;
   }
 };
 
@@ -86,6 +86,8 @@ const mkdirp = (p, opts, made) => {
   return made;
 };
 
+
+// 辅助函数
 const helpers = {
   // run wrapper
   run(func) {
@@ -173,25 +175,360 @@ const helpers = {
   }
 };
 
+
+// 模板布局类
+class Layout {
+  constructor(core) {
+    this.core = core;
+    this.depth = 0;
+    this.templates = {};
+    this.blocks = {};
+  }
+
+  make(name, block = '') {
+    const extName = path.extname(name);
+
+    if (!extName) {
+      name += this.core.defaultExtName;
+    }
+
+    // 设置缓存目录
+    const cachePath = this.core.cachePath || path.join(os.tmpdir(), 'changba-template-cache', getHash(this.core.basePath));
+
+    // 设置缓存文件名
+    const destFilename = path.join(cachePath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
+
+    // 先检查是否需要重编译
+    if (!this.check(destFilename)) {
+      return destFilename;
+    }
+
+    // 先读取文件名
+    const filename = path.join(this.core.basePath, name);
+    // TODO: 可能需要先判断文件是否存在，并给出错误信息
+    let content = fs.readFileSync(filename).toString();
+    this.templates[filename] = getFileTime(filename);
+
+    const extendsName = this.getExtends(content);
+
+    // 判断是否第一行是否有 extends 指令
+    if (extendsName) {
+      // 有 extends 指令，表示需要解析父模板
+      content = this.parseParent(extendsName, content, filename);
+    }
+
+    content = this.removeCommand(content);
+
+    // 写入文件
+    if (block !== '') {
+      // 支持直接获取 block 内容
+      this.writeFile(destFilename, this.blocks[block] ? this.blocks[block] : `Block ${block} not found!`);
+    }
+    else {
+      this.writeFile(destFilename, content);
+    }
+
+    return destFilename;
+  }
+
+  // 解析父模板
+  parseParent(name, subContent, subFilename) {
+    this.depth++;
+
+    const extName = path.extname(name);
+    if (!extName) {
+      name += this.core.defaultExtName;
+    }
+
+    let filename;
+
+    if (name.indexOf('/') === 0) {
+      filename = path.join(this.core.basePath, name);
+    }
+    else {
+      filename = path.join(path.dirname(subFilename), name);
+    }
+
+    let content = fs.readFileSync(filename).toString();
+    this.templates[filename] = getFileTime(filename);
+
+    // 获取父模板名称
+    const extendsName = this.getExtends(content);
+
+    // 解析 block 指令
+    const subBlocks = this.getBlocks(subContent);
+    content = this.parseParentBlock(content, subBlocks);
+
+    if (extendsName) {
+      // 有 extends 指令，表示需要加载父模板
+      content = this.parseParent(extendsName, content, filename);
+    }
+
+    this.depth--;
+
+    return content;
+  }
+
+  parseParentBlock(content, subBlocks) {
+    const currentBlocks = Object.assign({}, this.getBlocks(content), subBlocks);
+
+    Object.assign(this.blocks, subBlocks);
+
+    const pattern = this.createPlainMatcher('block');
+    content = content.replace(pattern, (match, p1, p2, p3, p4, p5) => {
+      if (!p3) {
+        return '';
+      }
+
+      const name = p3;
+
+      if (typeof this.blocks[name] !== 'undefined') {
+        let str = this.blocks[name];
+
+        str = this.commandUse(str, currentBlocks);
+        str = this.commandCall(str, currentBlocks, 'apply');
+        str = this.commandCall(str, currentBlocks);
+
+        str = this.commandParent(str, p4);
+        str = this.commandChild(str, p4);
+
+        str = this.commandSlot(str, p4);
+
+        // 返回: <% block xxx %>处理后的内容<% /block %>
+        return p1 + str + p5;
+      }
+
+      return match;
+    });
+
+    return content;
+  }
+
+  check(filename) {
+    if (!fileExists(filename)) {
+      return true;
+    }
+
+    const contents = fs.readFileSync(filename).toString().split(/\n/);
+    const templates = JSON.parse(contents[1] || '{}');
+
+    // 检查每个文件是否过期
+    // 只要有一个文件过期则重编译整个模板
+    for (const key in templates) {
+      const value = templates[key];
+
+      const newTime = getFileTime(key);
+      if (newTime < 0 || newTime > value) {
+        // 文件有更新
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  getExtends(content) {
+    const pattern = this.createOpenMatcher('extends');
+    const match = pattern.exec(content);
+
+    return match ? match[2] : '';
+  }
+
+  getBlocks(content) {
+    const blocks = {};
+    let match = null;
+    const pattern = this.createMatcher('block');
+
+    while ((match = pattern.exec(content)) !== null) {
+      if (match[2]) {
+        const param = match[2].trim().split(/\s+/);
+
+        blocks[param[0]] = match[3];
+      }
+    }
+
+    return blocks;
+  }
+
+  writeFile(filename, data) {
+    const dir = path.dirname(filename);
+
+    if (!fileExists(dir)) {
+      mkdirp(dir);
+    }
+
+    const prefix = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templates)}\n*/+'`;
+
+    fs.writeFileSync(filename, prefix + this.core._analysisStr(data));
+  }
+
+  removeCommand(content) {
+    ['extends', 'block', '/block', 'parent', 'child', 'use', 'apply', '/apply', 'call', '/call', 'slot', '/slot'].forEach((item) => {
+      const pattern = this.createOpenMatcher(item);
+
+      content = content.replace(pattern, '');
+    });
+
+    return content;
+  }
+
+  removeCommandWithContent(commend, content) {
+    const pattern = this.createMatcher(commend);
+
+    return content.replace(pattern, '');
+  }
+
+  commandParent(content, parentContent) {
+    const pattern = this.createOpenMatcher('parent');
+
+    return content.replace(pattern, parentContent);
+  }
+
+  commandChild(content, parentContent) {
+    const pattern = this.createOpenMatcher('child');
+
+    if (parentContent.match(pattern)) {
+      content = parentContent.replace(pattern, content);
+    }
+
+    return content;
+  }
+
+  commandSlot(content, parentContent) {
+    const pattern = this.createMatcher('slot');
+
+    if (!parentContent.match(pattern)) {
+      return content;
+    }
+
+    const slots = {};
+    let defaultSlot;
+    let match = null;
+
+    // 查找子 block 中的所有 slot
+    while ((match = pattern.exec(content)) !== null) {
+      if (match[2]) {
+        slots[match[2]] = match[3];
+      }
+      else {
+        defaultSlot = match[3];
+      }
+    }
+
+    // 获取清理了 slot 指令的内容
+    const plainContent = content.replace(pattern, '');
+
+    content = parentContent.replace(pattern, (match, p1, p2, p3) => {
+      if (!p2) {
+        return typeof defaultSlot !== 'undefined' ? defaultSlot : plainContent;
+      }
+      else {
+        return typeof slots[p2] !== 'undefined' ? slots[p2] : p3;
+      }
+    });
+
+    return content;
+  }
+
+  commandUse(content, currentBlocks) {
+    const pattern = this.createOpenMatcher('use');
+    const patternSlot = this.createMatcher('slot');
+
+    content = content.replace(pattern, (p0, p1, p2) => {
+      const params = p2.split(/\s+/, 2);
+      const name = params[0];
+      const other = params.splice(1).join(' ');
+
+      if (!currentBlocks[name]) {
+        return '';
+      }
+
+      const blocks = {};
+      let match = null;
+      const paramsPattern = /(\S+?)="(.*?)"/g;
+
+      while ((match = paramsPattern.exec(other)) !== null) {
+        blocks[match[1]] = match[2];
+      }
+
+      return currentBlocks[name].replace(patternSlot, (match, p1, p2, p3) => {
+        return blocks[p2] ? blocks[p2] : p3;
+      });
+    });
+
+    return content;
+  }
+
+  commandCall(content, currentBlocks, command = 'call') {
+    const pattern = this.createMatcher(command);
+    const patternSlot = this.createMatcher('slot');
+
+    content = content.replace(pattern, (p0, p1, p2, p3) => {
+      const params = p2.split(/\s+/);
+      const name = params[0];
+      const other = params.splice(1).join(' ');
+
+      if (!currentBlocks[name]) {
+        return '';
+      }
+
+      const blocks = {};
+      let match = null;
+      const paramsPattern = /(\S+?)="(.*?)"/g;
+
+      while ((match = paramsPattern.exec(other)) !== null) {
+        blocks[match[1]] = match[2];
+      }
+
+      while ((match = patternSlot.exec(p3)) !== null) {
+        blocks[match[2]] = match[3];
+      }
+
+      return currentBlocks[name].replace(patternSlot, (match, slotP1, slotP2, slotP3) => {
+        if (slotP2 == '') {
+          return this.removeCommandWithContent('slot', p3);
+        }
+        else {
+          return blocks[slotP2] ? blocks[slotP2] : slotP3;
+        }
+      });
+    });
+
+    return content;
+  }
+
+  createMatcher(keyword, noParam = false) {
+    return new RegExp(encodeReg(this.core.leftDelimiter) + '\\s*(' + keyword + ')' + (noParam ? '' : '(?:\\s+([^' + encodeReg(this.core.rightDelimiter) + ']+?)|\\s*)') + '\\s*' + encodeReg(this.core.rightDelimiter)
+      + '(?:\\r?\\n)?(.*?)' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?', 'gs');
+  }
+
+  createOpenMatcher(keyword) {
+    return new RegExp(encodeReg(this.core.leftDelimiter) + '\\s*(' + keyword + ')(?:\\s+([^' + encodeReg(this.core.rightDelimiter) + ']+?)|\\s*)\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?', 'g');
+  }
+
+  createPlainMatcher(keyword) {
+    return new RegExp('(' + encodeReg(this.core.leftDelimiter) + '\\s*(' + keyword + ')(?:\\s+([^' + encodeReg(this.core.rightDelimiter) + ']+?)|\\s*)\\s*' + encodeReg(this.core.rightDelimiter)
+      + '(?:\\r?\\n)?)(.*?)(' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?)', 'gs');
+  }
+};
+
+
 const core = {
 
   //标记当前版本
-  version: '1.0.10',
+  version: '1.0.11',
 
   //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
   leftDelimiter: '<%',
   rightDelimiter: '%>',
 
-  //自定义默认是否转义，默认为默认自动转义
+  //自定义默认是否转义，默认为自动转义
   escape: true,
 
-  basePath: process.cwd(),
+  basePath: '',
   cachePath: '',
 
   defaultExtName: '.html',
-
-  //缓存
-  _cache: {},
 
   // 模板函数
   template(str) {
@@ -205,13 +542,15 @@ const core = {
   },
 
   renderFileSync(filename, data) {
-    const compiledFilename = this._makeLayout(filename);
+    const instance = new Layout(this);
+    const compiledFilename = instance.make(filename);
 
     return this._compileFromString(fs.readFileSync(compiledFilename).toString())(data);
   },
 
   renderFile(filename, data, callback) {
-    const compiledFilename = this._makeLayout(filename);
+    const instance = new Layout(this);
+    const compiledFilename = instance.make(filename);
 
     fs.readFile(compiledFilename, (err, fileData) => {
       if (err) {
@@ -241,344 +580,6 @@ const core = {
   //将字符串拼接生成函数，即编译过程(compile)
   _compile(str) {
     return this._compileFromString(this._analysisStr(str));
-  },
-
-  _makeLayout(name, block = '') {
-    const templateData = {
-      depth: 0,
-      templates: {},
-      currentBlocks: {},
-      prevCurrentBlocks: {},
-      blocks: {}
-    };
-
-    const extName = path.extname(name);
-
-    if (!extName) {
-      name += this.defaultExtName;
-    }
-
-    const cachePath = this.cachePath || path.join(os.tmpdir(), 'changba-template-cache', getHash(this.basePath));
-
-    const destFilename = path.join(cachePath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
-
-    // 先检查是否需要重编译
-    if (!this._check(destFilename)) {
-      return destFilename;
-    }
-
-    // 先读取文件名
-    const filename = path.join(this.basePath, name);
-    // TODO: 可能需要先判断文件是否存在，并给出错误信息
-    let content = fs.readFileSync(filename).toString();
-    templateData.templates[name] = getFileTime(filename);
-
-    const extendsName = this._getExtends(content);
-
-    // 判断是否第一行是否有 extends 指令
-    if (extendsName) {
-      // 有 extends 指令，表示需要解析父模板
-      content = this._parseParent(templateData, extendsName, content);
-    }
-
-    content = this._removeCommand(content);
-
-    // 写入文件
-    if (block !== '') {
-      // 支持直接获取 block 内容
-      this._writeFile(templateData, destFilename, templateData.blocks[block] ? templateData.blocks[block] : `Block ${block} not found!`);
-    }
-    else {
-      this._writeFile(templateData, destFilename, content);
-    }
-
-    return destFilename;
-  },
-
-  _check(filename) {
-    if (!fileExists(filename)) {
-      return true;
-    }
-
-    const contents = fs.readFileSync(filename).toString().split(/\n/);
-    const templates = JSON.parse(contents[1] || '{}');
-
-    // 检查每个文件是否过期
-    // 只要有一个文件过期则重编译整个模板
-    for (const key in templates) {
-      const value = templates[key];
-
-      const newTime = getFileTime(path.join(this.basePath, key));
-      if (newTime > value) {
-        // 文件有更新
-        return true;
-      }
-    }
-
-    return false;
-  },
-
-  _getExtends(content) {
-    const pattern = this._createOpenMatcher('extends');
-    const match = pattern.exec(content);
-
-    return match ? match[2] : '';
-  },
-
-  _parseParent(templateData, name, subContent) {
-    templateData.depth++;
-
-    const extName = path.extname(name);
-    if (!extName) {
-      name += this.defaultExtName;
-    }
-
-    const filename = path.join(this.basePath, name);
-    let content = fs.readFileSync(filename).toString();
-    templateData.templates[name] = getFileTime(filename);
-
-    const extendsName = this._getExtends(content);
-    if (extendsName) {
-      // 有 extends 指令，表示需要加载父模板
-      content = this._parseParent(templateData, extendsName, content);
-    }
-
-    // 解析 block 指令
-    const subBlocks = this._getBlocks(subContent);
-    content = this._parseParentBlock(templateData, content, subBlocks);
-
-    templateData.depth--;
-
-    return content;
-  },
-
-  _getBlocks(content) {
-    const blocks = {};
-    let match = null;
-    const pattern = this._createMatcher('block');
-
-    while ((match = pattern.exec(content)) !== null) {
-      if (match && match[2]) {
-        const param = match[2].trim().split(/\s+/);
-
-        blocks[param[0]] = match[3];
-      }
-    }
-
-    return blocks;
-  },
-
-  _parseParentBlock(templateData, content, blocks) {
-    templateData.currentBlocks = blocks;
-
-    templateData.prevCurrentBlocks = Object.assign(templateData.prevCurrentBlocks, blocks);
-
-    for (const key in blocks) {
-      let value = blocks[key];
-
-      value = this._commandUse(templateData, value, value);
-      value = this._commandCall(templateData, value, value, 'apply');
-      value = this._commandCall(templateData, value, value);
-      value = this._commandSlot(templateData, value, value);
-
-      templateData.blocks[key] = value;
-    }
-
-    const pattern = this._createPlainMatcher('block');
-    content = content.replace(pattern, (match, p1, p2, p3, p4, p5) => {
-      const param = p3.trim().split(/\s+/);
-      const name = param[0];
-      const mode = param[1] ? param[1] : '';
-
-      if (mode == 'hide' && name !== '' && !templateData.currentBlocks[name]) {
-        if (templateData.depth > 1) {
-          return match;
-        }
-        else {
-          return p1 + p5;
-        }
-      }
-
-      if (name !== '' && templateData.currentBlocks[name]) {
-        templateData.currentBlocks[name] = this._commandUse(templateData, templateData.currentBlocks[name], p4);
-        templateData.currentBlocks[name] = this._commandCall(templateData, templateData.currentBlocks[name], p4, 'apply');
-        templateData.currentBlocks[name] = this._commandCall(templateData, templateData.currentBlocks[name], p4);
-
-        templateData.currentBlocks[name] = this._commandParent(templateData, templateData.currentBlocks[name], p4);
-        templateData.currentBlocks[name] = this._commandChild(templateData, templateData.currentBlocks[name], p4);
-
-        templateData.currentBlocks[name] = this._commandSlot(templateData, templateData.currentBlocks[name], p4);
-
-        return p1 + templateData.currentBlocks[name] + p5;
-      }
-
-      return match;
-    });
-
-    return content;
-  },
-
-  _writeFile(templateData, filename, data) {
-    const dir = path.dirname(filename);
-
-    if (!fileExists(dir)) {
-      mkdirp(dir);
-    }
-
-    const prefix = `'/* changba template engine v${this.version}\n${JSON.stringify(templateData.templates)}\n*/+'`;
-
-    fs.writeFileSync(filename, prefix + this._analysisStr(data));
-  },
-
-  _removeCommand(content) {
-    ['extends', 'block', '/block', 'parent', 'child', 'use', 'apply', '/apply', 'call', '/call', 'slot', '/slot'].forEach((item) => {
-      const pattern = this._createOpenMatcher(item);
-
-      content = content.replace(pattern, '');
-    });
-
-    return content;
-  },
-
-  _removeCommandWithContent(commend, content) {
-    const pattern = this._createMatcher(commend);
-
-    return content.replace(pattern, '');
-  },
-
-  _commandParent(templateData, content, parentContent) {
-    const pattern = this._createOpenMatcher('parent');
-
-    return content.replace(pattern, parentContent);
-  },
-
-  _commandChild(templateData, content, parentContent) {
-    const pattern = this._createOpenMatcher('child');
-
-    if (parentContent.match(pattern)) {
-      content = parentContent.replace(pattern, content);
-    }
-
-    return content;
-  },
-
-  _commandSlot(templateData, content, parentContent) {
-    const pattern = this._createMatcher('slot');
-
-    if (!parentContent.match(pattern)) {
-      return content;
-    }
-
-    const blocks = {};
-    let match = null;
-
-    while ((match = pattern.exec(content)) !== null) {
-      blocks[match[2]] = match[3];
-    }
-
-    if (content.match(pattern)) {
-      const plainContent = content.replace(pattern, '');
-
-      content = parentContent.replace(pattern, (match, p1, p2, p3) => {
-        if (!p2) {
-          return plainContent;
-        }
-        else {
-          return blocks[p2] ? blocks[p2] : p3;
-        }
-      });
-    }
-    else {
-      // 判断是否有默认插槽
-      const simplePattern = this._createMatcher('slot', true);
-
-      if (parentContent.match(simplePattern)) {
-        content = parentContent.replace(simplePattern, content);
-      }
-    }
-
-    return content;
-  },
-
-  _commandUse(templateData, content) {
-    const pattern = this._createOpenMatcher('use');
-    const patternSlot = this._createMatcher('slot');
-
-    const blocksContent = templateData.prevCurrentBlocks;
-
-    content = content.replace(pattern, (p0, p1, p2) => {
-      const params = p2.split(/\s+/, 2);
-      const name = params[0];
-
-      if (!blocksContent[name]) {
-        return '';
-      }
-
-      const blocks = {};
-      let match = null;
-
-      while ((match = /(\S+?)="(.*?)"/.exec(params[1])) != null) {
-        blocks[match[1]] = match[2];
-      }
-
-      return blocksContent[name].replace(patternSlot, (match, p1, p2, p3) => {
-        return blocks[p2] ? blocks[p2] : p3;
-      });
-    });
-
-    return content;
-  },
-
-  _commandCall(templateData, content, parentContent, command = 'call') {
-    const pattern = this._createMatcher(command);
-    const patternSlot = this._createMatcher('slot');
-
-    const blocksContent = templateData.prevCurrentBlocks;
-
-    content = content.replace(pattern, (p0, p1, p2, p3) => {
-      const params = p2.split(/\s+/, 2);
-      const name = params[0];
-
-      if (!blocksContent[name]) {
-        return '';
-      }
-
-      const blocks = {};
-      let match = null;
-
-      while ((match = /(\S+?)="(.*?)"/.exec(params[1])) !== null) {
-        blocks[match[1]] = match[2];
-      }
-
-      while ((match = patternSlot.exec(p3)) !== null) {
-        blocks[match[2]] = match[3];
-      }
-
-      return blocksContent[name].replace(patternSlot, (match, slotP1, slotP2, slotP3) => {
-        if (slotP2 == '') {
-          return this._removeCommandWithContent('slot', p3);
-        }
-        else {
-          return blocks[slotP2] ? blocks[slotP2] : slotP3;
-        }
-      });
-    });
-
-    return content;
-  },
-
-  _createMatcher(keyword, noParam = false) {
-    return new RegExp(encodeReg(this.leftDelimiter) + '\\s*(' + keyword + ')' + (noParam ? '' : '(?:\\s+(.+?)|\\s*)') + '\\s*' + encodeReg(this.rightDelimiter)
-      + '(?:\\r?\\n)?(.*?)' + encodeReg(this.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.rightDelimiter) + '(?:\\r?\\n)?', 'gs');
-  },
-
-  _createOpenMatcher(keyword) {
-    return new RegExp(encodeReg(this.leftDelimiter) + '\\s*(' + keyword + ')(?:\\s+(.+?)|\\s*)\\s*' + encodeReg(this.rightDelimiter) + '(?:\\r?\\n)?', 'g');
-  },
-
-  _createPlainMatcher(keyword) {
-    return new RegExp('(' + encodeReg(this.leftDelimiter) + '\\s*(' + keyword + ')(?:\\s+(.+?)|\\s*)\\s*' + encodeReg(this.rightDelimiter)
-      + '(?:\\r?\\n)?)(.*?)(' + encodeReg(this.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.rightDelimiter) + '(?:\\r?\\n)?)', 'gs');
   },
 
   _compileFromString(str) {
@@ -802,6 +803,7 @@ const core = {
   }
 
 };
+
 
 module.exports = Object.assign({
   getInstance() {
