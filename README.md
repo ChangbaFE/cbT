@@ -52,9 +52,9 @@ cbT.renderFile(filename, data);
 <% extends 模板路径 %>
 ```
 
-例如 `<% extends welcome/test %>`
+例如 `<% extends /welcome/test %>`
 
-这里指的是从 `baseSrcPath/welcome/test.html` 这个模板继承。
+这里指的是从 `basePath/welcome/test.html` 这个模板继承。
 
 注意：`extends` 标签必须在模板文件首行首字母位置。另外这个标签不需要结束标签。
 
