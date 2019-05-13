@@ -180,9 +180,20 @@ const helpers = {
 class Layout {
   constructor(core) {
     this.core = core;
+
     this.depth = 0;
-    this.templates = {};
+
+    // 存储模板文件修改时间
+    this.templateTimes = {};
+
+    // 存储已处理过的 block
     this.blocks = {};
+
+    // 存储未处理的原始 block
+    this.rawBlocks = [];
+
+    // 存储模板内容
+    this.templates = [];
   }
 
   make(name, block = '') {
@@ -207,14 +218,16 @@ class Layout {
     const filename = path.join(this.core.basePath, name);
     // TODO: 可能需要先判断文件是否存在，并给出错误信息
     let content = fs.readFileSync(filename).toString();
-    this.templates[filename] = getFileTime(filename);
+    this.templateTimes[filename] = getFileTime(filename);
 
     const extendsName = this.getExtends(content);
 
     // 判断是否第一行是否有 extends 指令
     if (extendsName) {
       // 有 extends 指令，表示需要解析父模板
-      content = this.parseParent(extendsName, content, filename);
+      this.parseParent(extendsName, content, filename);
+      // 处理模板
+      content = this.processParent(content);
     }
 
     content = this.removeCommand(content);
@@ -236,6 +249,7 @@ class Layout {
     this.depth++;
 
     const extName = path.extname(name);
+
     if (!extName) {
       name += this.core.defaultExtName;
     }
@@ -249,38 +263,69 @@ class Layout {
       filename = path.join(path.dirname(subFilename), name);
     }
 
-    let content = fs.readFileSync(filename).toString();
-    this.templates[filename] = getFileTime(filename);
+    const content = fs.readFileSync(filename).toString();
+    this.templateTimes[filename] = getFileTime(filename);
+
+    // 模板内容入栈，等待后续处理
+    this.templates.push(content);
 
     // 获取父模板名称
     const extendsName = this.getExtends(content);
 
-    // 解析 block 指令
-    const subBlocks = this.getBlocks(subContent);
-    content = this.parseParentBlock(content, subBlocks);
-
     if (extendsName) {
       // 有 extends 指令，表示需要加载父模板
-      content = this.parseParent(extendsName, content, filename);
+      this.parseParent(extendsName, content, filename);
     }
 
+    // 合并每一级的 block 信息，备用
+    this.rawBlocks.push(this.getBlocks(content));
+
     this.depth--;
+
+    if (this.depth === 0) {
+      // 如果解析到最末一级，则合并最末一级模板的 block 内容
+      // 此处需要特殊处理，否则会丢掉最末一级模板的 block 内容
+      this.rawBlocks.push(this.getBlocks(subContent));
+    }
+  }
+
+  processParent(subContent) {
+    let content = '';
+    let subBlocks = this.getBlocks(subContent);
+
+    const length = this.rawBlocks.length;
+
+    this.templates.forEach((item, index) => {
+      let parentsBlocks = {};
+
+      for (let i = 0; i < length - index; i++) {
+        parentsBlocks = Object.assign(parentsBlocks, this.rawBlocks[i]);
+      }
+
+      content = this.parseParentBlock(item, subBlocks, parentsBlocks);
+      subBlocks = this.getBlocks(content);
+    });
 
     return content;
   }
 
-  parseParentBlock(content, subBlocks) {
-    const currentBlocks = Object.assign({}, this.getBlocks(content), subBlocks);
-
+  parseParentBlock(content, subBlocks, currentBlocks) {
     Object.assign(this.blocks, subBlocks);
 
     const pattern = this.createPlainMatcher('block');
+
     content = content.replace(pattern, (match, p1, p2, p3, p4, p5) => {
       if (!p3) {
         return '';
       }
 
-      const name = p3;
+      const params = p3.split(/\s+/);
+      const name = params[0];
+      const mode = params[1];
+
+      if (mode === 'hide') {
+        return '';
+      }
 
       if (typeof this.blocks[name] !== 'undefined') {
         let str = this.blocks[name];
@@ -357,7 +402,7 @@ class Layout {
       mkdirp(dir);
     }
 
-    const prefix = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templates)}\n*/+'`;
+    const prefix = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templateTimes)}\n*/+'`;
 
     fs.writeFileSync(filename, prefix + this.core._analysisStr(data));
   }
@@ -516,7 +561,7 @@ class Layout {
 const core = {
 
   //标记当前版本
-  version: '1.0.11',
+  version: '1.1.0',
 
   //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
   leftDelimiter: '<%',
