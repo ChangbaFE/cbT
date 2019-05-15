@@ -546,7 +546,7 @@ class Layout {
 
   createMatcher(keyword, noParam = false) {
     return new RegExp(encodeReg(this.core.leftDelimiter) + '\\s*(' + keyword + ')' + (noParam ? '' : '(?:\\s+([^' + encodeReg(this.core.rightDelimiter) + ']+?)|\\s*)') + '\\s*' + encodeReg(this.core.rightDelimiter)
-      + '(?:\\r?\\n)?(.*?)' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?', 'gs');
+      + '(?:\\r?\\n)?([\\s\\S]*?)' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?', 'g');
   }
 
   createOpenMatcher(keyword) {
@@ -555,7 +555,7 @@ class Layout {
 
   createPlainMatcher(keyword) {
     return new RegExp('(' + encodeReg(this.core.leftDelimiter) + '\\s*(' + keyword + ')(?:\\s+([^' + encodeReg(this.core.rightDelimiter) + ']+?)|\\s*)\\s*' + encodeReg(this.core.rightDelimiter)
-      + '(?:\\r?\\n)?)(.*?)(' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?)', 'gs');
+      + '(?:\\r?\\n)?)([\\s\\S]*?)(' + encodeReg(this.core.leftDelimiter) + '\\s*/' + keyword + '\\s*' + encodeReg(this.core.rightDelimiter) + '(?:\\r?\\n)?)', 'g');
   }
 };
 
