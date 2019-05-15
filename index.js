@@ -563,7 +563,7 @@ class Layout {
 const core = {
 
   //标记当前版本
-  version: '1.1.0',
+  version: '1.1.1',
 
   //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
   leftDelimiter: '<%',
