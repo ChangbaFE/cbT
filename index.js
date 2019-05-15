@@ -28,6 +28,15 @@ const fileExists = (filename) => {
   }
 };
 
+const dirExists = (dirname) => {
+  try {
+    return fs.statSync(dirname).isDirectory();
+  }
+  catch (e) {
+    return false;
+  }
+};
+
 const getFileTime = (filename) => {
   try {
     return fs.statSync(filename).mtime.getTime();
@@ -196,10 +205,19 @@ class Layout {
 
     // 存储模板内容
     this.templates = [];
+
+    // 默认选项
+    this.defaultOptions = {
+      block: '',
+      cache: true
+    }
   }
 
-  make(name, block = '') {
+  make(name, options = {}) {
+    options = Object.assign({}, this.defaultOptions, options);
+
     const extName = path.extname(name);
+    const block = options.block;
 
     if (!extName) {
       name += this.core.defaultExtName;
@@ -211,9 +229,12 @@ class Layout {
     // 设置缓存文件名
     const destFilename = path.join(cachePath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
 
-    // 先检查是否需要重编译
-    if (!this.check(destFilename)) {
-      return destFilename;
+    if (options.cache) {
+      // 先检查是否需要重编译
+      let cacheContent = this.getCache(destFilename);
+      if (cacheContent !== false) {
+        return cacheContent;
+      }
     }
 
     // 先读取文件名
@@ -234,16 +255,20 @@ class Layout {
 
     content = this.removeCommand(content);
 
+    let result = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templateTimes)}\n*/+'`;
+
     // 写入文件
     if (block !== '') {
       // 支持直接获取 block 内容
-      this.writeFile(destFilename, this.blocks[block] ? this.blocks[block] : `Block ${block} not found!`);
+      result += this.blocks[block] ? this.blocks[block] : `Block ${block} not found!`;
     }
     else {
-      this.writeFile(destFilename, content);
+      result += this.core._analysisStr(content);
     }
 
-    return destFilename;
+    this.writeFile(destFilename, result);
+
+    return result;
   }
 
   // 解析父模板
@@ -351,27 +376,34 @@ class Layout {
     return content;
   }
 
-  check(filename) {
+  // 获取缓存数据
+  getCache(filename) {
     if (!fileExists(filename)) {
-      return true;
+      return false;
     }
 
-    const contents = fs.readFileSync(filename).toString().split(/\n/);
-    const templates = JSON.parse(contents[1] || '{}');
+    try {
+      const content = fs.readFileSync(filename).toString();
+      const contents = content.split(/\n/);
+      const templates = JSON.parse(contents[1] || '{}');
 
-    // 检查每个文件是否过期
-    // 只要有一个文件过期则重编译整个模板
-    for (const key in templates) {
-      const value = templates[key];
+      // 检查每个文件是否过期
+      // 只要有一个文件过期则重编译整个模板
+      for (const key in templates) {
+        const value = templates[key];
 
-      const newTime = getFileTime(key);
-      if (newTime < 0 || newTime > value) {
-        // 文件有更新
-        return true;
+        const newTime = getFileTime(key);
+        if (newTime < 0 || newTime > value) {
+          // 文件有更新，无缓存
+          return false;
+        }
       }
-    }
 
-    return false;
+      return content;
+    }
+    catch (e) {
+      return false;
+    }
   }
 
   getExtends(content) {
@@ -400,13 +432,15 @@ class Layout {
   writeFile(filename, data) {
     const dir = path.dirname(filename);
 
-    if (!fileExists(dir)) {
+    if (!dirExists(dir)) {
       mkdirp(dir);
     }
 
-    const prefix = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templateTimes)}\n*/+'`;
-
-    fs.writeFileSync(filename, prefix + this.core._analysisStr(data));
+    try {
+      fs.writeFileSync(filename, data);
+    }
+    catch (e) {
+    }
   }
 
   removeCommand(content) {
@@ -579,45 +613,23 @@ const core = {
 
   // 模板函数
   template(str) {
+    // 返回渲染函数
     return this._compile(str);
   },
 
   // 渲染模板函数
   render(str, data, subTemplate) {
-    //有数据则返回HTML字符串，没有数据则返回函数 支持data={}的情况
+    // 返回渲染后的内容
     return this._compile(str)(data, subTemplate);
   },
 
-  renderFileSync(filename, data) {
+  // 渲染模板文件，支持模板继承
+  renderFile(filename, data, options = {}) {
     const instance = new Layout(this);
-    const compiledFilename = instance.make(filename);
+    const content = instance.make(filename, options);
 
-    return this._compileFromString(fs.readFileSync(compiledFilename).toString())(data);
-  },
-
-  renderFile(filename, data, callback) {
-    const instance = new Layout(this);
-    const compiledFilename = instance.make(filename);
-
-    fs.readFile(compiledFilename, (err, fileData) => {
-      if (err) {
-        callback(err, '');
-
-        return;
-      }
-
-      let result = '';
-
-      try {
-        result = this._compileFromString(fileData.toString())(data);
-      }
-      catch (e) {
-        err = e;
-        result = '';
-      }
-
-      callback(err, result);
-    });
+    // 返回渲染后的内容
+    return this._compileFromString(content)(data);
   },
 
   getCompiledString(str) {
