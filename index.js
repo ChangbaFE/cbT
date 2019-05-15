@@ -145,8 +145,10 @@ const helpers = {
   },
 
   isEmptyObject(obj) {
-    for (const name in obj) {
-      return false;
+    for (const prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        return false;
+      }
     }
 
     return true;
