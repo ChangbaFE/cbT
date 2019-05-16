@@ -404,10 +404,9 @@ class Layout {
       // 检查每个文件是否过期
       // 只要有一个文件过期则重编译整个模板
       for (const key in info.files) {
-        const value = info.files[key];
-
         const newTime = getFileTime(key);
-        if (newTime < 0 || newTime > value) {
+
+        if (newTime < 0 || newTime > info.files[key]) {
           // 文件有更新，标记为无缓存
           return false;
         }
