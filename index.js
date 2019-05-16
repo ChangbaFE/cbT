@@ -5,6 +5,8 @@ const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
 
+const VERSION = '1.1.1';
+
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
 const TEMPLATE_SUB = '__templateSub__';
@@ -263,7 +265,7 @@ class Layout {
       result += this.blocks[block] ? this.blocks[block] : `Block ${block} not found!`;
     }
     else {
-      result += this.core._analysisStr(content);
+      result += this.core._parse(content);
     }
 
     this.writeFile(destFilename, result);
@@ -597,7 +599,7 @@ class Layout {
 const core = {
 
   //标记当前版本
-  version: '1.1.1',
+  version: VERSION,
 
   //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
   leftDelimiter: '<%',
@@ -611,37 +613,34 @@ const core = {
 
   defaultExtName: '.html',
 
-  // 模板函数
-  template(str) {
-    // 返回渲染函数
-    return this._compile(str);
+  //编译模板
+  compile(str) {
+    // 返回模板函数
+    return this._buildTemplateFunction(this._parse(str));
   },
 
   // 渲染模板函数
   render(str, data, subTemplate) {
     // 返回渲染后的内容
-    return this._compile(str)(data, subTemplate);
+    return this.compile(str)(data, subTemplate);
+  },
+
+  // 编译模板文件，支持模板继承
+  compileFile(filename, options = {}) {
+    const instance = new Layout(this);
+    const content = instance.make(filename, options);
+
+    // 返回模板函数
+    return this._buildTemplateFunction(content);
   },
 
   // 渲染模板文件，支持模板继承
   renderFile(filename, data, options = {}) {
-    const instance = new Layout(this);
-    const content = instance.make(filename, options);
-
     // 返回渲染后的内容
-    return this._compileFromString(content)(data);
+    return this.compileFile(filename, options)(data);
   },
 
-  getCompiledString(str) {
-    return this._analysisStr(str);
-  },
-
-  //将字符串拼接生成函数，即编译过程(compile)
-  _compile(str) {
-    return this._compileFromString(this._analysisStr(str));
-  },
-
-  _compileFromString(str) {
+  _buildTemplateFunction(str) {
     let funcBody = `
       let ${TEMPLATE_OUT} = '';
       ((${TEMPLATE_OBJECT}, ${SUB_TEMPLATE}) => {
@@ -677,7 +676,7 @@ const core = {
   },
 
   //解析模板字符串
-  _analysisStr(str) {
+  _parse(str) {
 
     //取得分隔符
     const _left_ = this.leftDelimiter;
