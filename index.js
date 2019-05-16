@@ -394,7 +394,7 @@ class Layout {
 
         const newTime = getFileTime(key);
         if (newTime < 0 || newTime > value) {
-          // 文件有更新，无缓存
+          // 文件有更新，标记为无缓存
           return false;
         }
       }
