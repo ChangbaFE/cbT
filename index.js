@@ -230,8 +230,8 @@ class Layout {
     const destFilename = path.join(cachePath, getHash(name + (block === '' ? '' : ':' + block)) + extName);
 
     if (options.cache) {
-      // 先检查是否需要重编译
-      let cacheContent = this.getCache(destFilename);
+      // 检查是否需要重编译
+      const cacheContent = this.getCache(destFilename);
       if (cacheContent !== false) {
         return cacheContent;
       }
