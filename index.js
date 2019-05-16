@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
 
-const VERSION = '1.1.6';
+const VERSION = '1.1.7';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
@@ -259,7 +259,12 @@ class Layout {
 
     content = this.removeCommand(content);
 
-    let result = `'/* changba template engine v${this.core.version}\n${JSON.stringify(this.templateTimes)}\n*/+'`;
+    const cacheInfo = {
+      version: this.core.version,
+      files: this.templateTimes
+    };
+
+    let result = `'/* changba template engine\n${JSON.stringify(cacheInfo)}\n*/+'`;
 
     // 写入文件
     if (block !== '') {
@@ -389,12 +394,17 @@ class Layout {
     try {
       const content = fs.readFileSync(filename).toString();
       const contents = content.split(/\n/);
-      const templates = JSON.parse(contents[1] || '{}');
+      const info = JSON.parse(contents[1] || '{}');
+
+      if (info.version !== this.core.version) {
+        // 模板引擎版本不同，标记为无缓存
+        return false;
+      }
 
       // 检查每个文件是否过期
       // 只要有一个文件过期则重编译整个模板
-      for (const key in templates) {
-        const value = templates[key];
+      for (const key in info.files) {
+        const value = info.files[key];
 
         const newTime = getFileTime(key);
         if (newTime < 0 || newTime > value) {
