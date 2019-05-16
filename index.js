@@ -5,12 +5,14 @@ const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
 
-const VERSION = '1.1.2';
+const VERSION = '1.1.3';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
 const TEMPLATE_SUB = '__templateSub__';
 const TEMPLATE_OBJECT = '__templateObject__';
+const TEMPLATE_NAME = '__templateName__';
+const TEMPLATE_HELPER = '__templateHelper__';
 const SUB_TEMPLATE = '__subTemplate__';
 const FOREACH_INDEX = 'Index';
 
@@ -642,24 +644,21 @@ const core = {
 
   _buildTemplateFunction(str) {
     let funcBody = `
-      let ${TEMPLATE_OUT} = '';
-      ((${TEMPLATE_OBJECT}, ${SUB_TEMPLATE}) => {
-        if (${SUB_TEMPLATE}) {
-          ${TEMPLATE_OBJECT} = { value: ${TEMPLATE_OBJECT} };
+      var ${TEMPLATE_OUT} = '';
+      if (${SUB_TEMPLATE}) {
+        ${TEMPLATE_OBJECT} = { value: ${TEMPLATE_OBJECT} };
+      }
+      var ${TEMPLATE_VAR_NAME} = '';
+      if (typeof ${TEMPLATE_OBJECT} === 'function' || !!(${TEMPLATE_OBJECT} && typeof ${TEMPLATE_OBJECT} === 'object')) {
+        for (var ${TEMPLATE_NAME} in ${TEMPLATE_OBJECT}) {
+          ${TEMPLATE_VAR_NAME} += 'var ' + ${TEMPLATE_NAME} + ' = ${TEMPLATE_OBJECT}["' + ${TEMPLATE_NAME} + '"];';
         }
-        let ${TEMPLATE_VAR_NAME} = '';
-        if (typeof ${TEMPLATE_OBJECT} === 'function' || !!(${TEMPLATE_OBJECT} && typeof ${TEMPLATE_OBJECT} === 'object')) {
-          for (let name in ${TEMPLATE_OBJECT}) {
-            ${TEMPLATE_VAR_NAME} += 'var ' + name + ' = ${TEMPLATE_OBJECT}["' + name + '"];';
-          }
-        }
-        eval(${TEMPLATE_VAR_NAME});
-        ${TEMPLATE_VAR_NAME} = null;
-        const cbTemplate = this;
-        let ${TEMPLATE_SUB} = {};
-        ${TEMPLATE_OUT} += '${str}';
-      })(${TEMPLATE_OBJECT}, ${SUB_TEMPLATE});
-
+      }
+      eval(${TEMPLATE_VAR_NAME});
+      ${TEMPLATE_VAR_NAME} = null;
+      var cbTemplate = ${TEMPLATE_HELPER};
+      var ${TEMPLATE_SUB} = {};
+      ${TEMPLATE_OUT} += '${str}';
       return ${TEMPLATE_OUT};
     `;
 
@@ -668,11 +667,9 @@ const core = {
     // 删除无效指令
     funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
 
-    const func = new Function(TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
+    const func = new Function(TEMPLATE_HELPER, TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
 
-    return (templateObject, subTemplate) => {
-      return func.call(helpers, templateObject, subTemplate);
-    };
+    return (templateObject, subTemplate) => func(helpers, templateObject, subTemplate);
   },
 
   //解析模板字符串
