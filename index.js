@@ -653,28 +653,28 @@ const core = {
 
   _buildTemplateFunction(str) {
     let funcBody = `
-      var ${TEMPLATE_OUT} = '';
       if (${SUB_TEMPLATE}) {
         ${TEMPLATE_OBJECT} = { value: ${TEMPLATE_OBJECT} };
       }
-      var ${TEMPLATE_VAR_NAME} = '';
-      if (typeof ${TEMPLATE_OBJECT} === 'function' || !!(${TEMPLATE_OBJECT} && typeof ${TEMPLATE_OBJECT} === 'object')) {
+      if (${TEMPLATE_HELPER}.isObject(${TEMPLATE_OBJECT})) {
+        let ${TEMPLATE_VAR_NAME} = '';
         for (var ${TEMPLATE_NAME} in ${TEMPLATE_OBJECT}) {
           ${TEMPLATE_VAR_NAME} += 'var ' + ${TEMPLATE_NAME} + ' = ${TEMPLATE_OBJECT}["' + ${TEMPLATE_NAME} + '"];';
         }
+        if (${TEMPLATE_VAR_NAME} !== '') {
+          eval(${TEMPLATE_VAR_NAME});
+        }
+        ${TEMPLATE_VAR_NAME} = null;
       }
-      eval(${TEMPLATE_VAR_NAME});
-      ${TEMPLATE_VAR_NAME} = null;
-      var cbTemplate = ${TEMPLATE_HELPER};
-      var ${TEMPLATE_SUB} = {};
-      ${TEMPLATE_OUT} += '${str}';
+      let ${TEMPLATE_SUB} = {};
+      let ${TEMPLATE_OUT} = '${str}';
       return ${TEMPLATE_OUT};
     `;
 
     // console.log(funcBody.replace(/\\n/g, '\n'));
 
     // 删除无效指令
-    funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+=\\s*'';`, 'g'), '');
+    funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+?=\\s*'';`, 'g'), '');
 
     const func = new Function(TEMPLATE_HELPER, TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
 
@@ -737,11 +737,11 @@ const core = {
 
       // foreach循环  <% foreach (x in arr) %>
       .replace(new RegExp(_left + "\\s*?foreach\\s*?\\((.+?)\\s+in\\s+(.+?)\\)\\s*?" + _right, "g"),
-        `${_left_}if/*-*/(typeof($2)!=='undefined'&&(Array.isArray($2)&&$2.length>0||cbTemplate.isObject($2)&&!cbTemplate.isEmptyObject($2))){cbTemplate.each($2,($1${FOREACH_INDEX},$1)=>{${_right_}`)
+        `${_left_}if/*-*/(typeof($2)!=='undefined'&&(Array.isArray($2)&&$2.length>0||${TEMPLATE_HELPER}.isObject($2)&&!${TEMPLATE_HELPER}.isEmptyObject($2))){${TEMPLATE_HELPER}.each($2,($1${FOREACH_INDEX},$1)=>{${_right_}`)
 
       // foreachelse指令  <% foreachelse %>
       .replace(new RegExp(_left + "\\s*?foreachelse\\s*?" + _right, "g"),
-        `${_left_}})}else{cbTemplate.run(()=>{${_right_}`)
+        `${_left_}})}else{${TEMPLATE_HELPER}.run(()=>{${_right_}`)
 
       // foreachbreak指令  <% foreachbreak %>
       .replace(new RegExp(_left + "\\s*?foreachbreak\\s*?" + _right, "g"),
@@ -798,7 +798,7 @@ const core = {
         //即替换简单变量  \t=data%> 替换为 ',data,'
         //默认HTML转义  也支持HTML转义写法<%:h=value%>
         .replace(new RegExp("\\t=(.*?)" + _right, "g"),
-          `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.encodeHTML($1))+'`);
+          `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1))+'`);
     }
     else {
       str = str
@@ -812,7 +812,7 @@ const core = {
 
       //支持HTML转义写法<%:h=value%>
       .replace(new RegExp("\\t:h=(.*?)" + _right, "g"),
-        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.encodeHTML($1))+'`)
+        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1))+'`)
 
       //支持不转义写法 <%:=value%>和<%-value%>
       .replace(new RegExp("\\t(?::=|-)(.*?)" + _right, "g"),
@@ -824,11 +824,11 @@ const core = {
 
       //支持UI 变量使用在HTML页面标签onclick等事件函数参数中  <%:v=value%>
       .replace(new RegExp("\\t:v=(.*?)" + _right, "g"),
-        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.encodeEventHTML($1))+'`)
+        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeEventHTML($1))+'`)
 
       //支持迭代数组  <%:a=value|分隔符%>
       .replace(new RegExp("\\t:a=(.+?)(?:\\|(.*?))?" + _right, "g"),
-        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.forEachArray($1,'$2'))+'`)
+        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.forEachArray($1,'$2'))+'`)
 
       //支持格式化钱数  <%:m=value%>
       .replace(new RegExp("\\t:m=(.+?)" + _right, "g"),
@@ -836,29 +836,26 @@ const core = {
 
       //字符串截取补... <%:s=value|位数%>
       .replace(new RegExp("\\t:s=(.+?)\\|(\\d+?)" + _right, "g"),
-        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.encodeHTML($1.length>$2?$1.substr(0,$2)+'...':$1))+'`)
+        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1.length>$2?$1.substr(0,$2)+'...':$1))+'`)
 
       //HTTP协议自适应 <%:p=value%>
       .replace(new RegExp("\\t:p=(.+?)" + _right, "g"),
-        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':cbTemplate.encodeHTML(cbTemplate.replaceUrlProtocol($1)))+'`)
+        `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML(${TEMPLATE_HELPER}.replaceUrlProtocol($1)))+'`)
 
       // <%:func=value%>
       .replace(new RegExp("\\t:func=(.*?)" + _right, "g"),
-        `'+cbTemplate.encodeHTML($1)+'`)
+        `'+${TEMPLATE_HELPER}.encodeHTML($1)+'`)
 
       // <%:func-value%>
       .replace(new RegExp("\\t:func-(.*?)" + _right, "g"),
         `'+($1)+'`)
 
 
-      //将字符串按照 \t 分成为数组，在用'); 将其合并，即替换掉结尾的 \t 为 ');
-      //在if，for等语句前面加上 '); ，形成 ');if  ');for  的形式
+      // 将字符串按照 \t 分成为数组，在用'; 将其合并，即替换掉结尾的 \t 为 ';
       .split("\t").join("';")
 
-      //将 %> 替换为 _template_out+='
-      //即去掉结尾符，生成字符串拼接
-      //如：if(list.length=5){%><h2>',list[4],'</h2>');}
-      //会被替换为 if(list.length=5){_template_out+='<h2>'+list[4]+'</h2>';}
+      // 将 %> 替换为 ${TEMPLATE_OUT}+='
+      // 即去掉结尾符，生成字符串拼接
       .split(_right_).join(`${TEMPLATE_OUT}+='`);
 
     //console.log(str);
