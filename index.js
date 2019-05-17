@@ -4,7 +4,7 @@ const Layout = require('./lib/layout');
 const helpers = require('./lib/helper');
 const { encodeReg } = require('./lib/utils');
 
-const VERSION = '1.1.9';
+const VERSION = '1.2.0';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
