@@ -2,7 +2,7 @@
 
 const Layout = require('./lib/layout');
 const helpers = require('./lib/helper');
-const { encodeReg } = require('./lib/utils');
+const utils = require('./lib/utils');
 
 const VERSION = '1.2.0';
 
@@ -45,18 +45,21 @@ const core = {
   },
 
   // 编译模板文件，支持模板继承
-  compileFile(filename, options = {}) {
+  compileFile(filename, options = {}, callback) {
     const instance = new Layout(this);
-    const content = instance.make(filename, options);
 
-    // 返回模板函数
-    return this._buildTemplateFunction(content);
+    instance.make(filename, options, (err, content) => {
+      // 返回模板函数
+      callback(err, this._buildTemplateFunction(content));
+    });
   },
 
   // 渲染模板文件，支持模板继承
-  renderFile(filename, data, options = {}) {
-    // 返回渲染后的内容
-    return this.compileFile(filename, options)(data);
+  renderFile(filename, data, options = {}, callback) {
+    this.compileFile(filename, options, (err, func) => {
+      // 返回渲染后的内容
+      callback(err, func(data));
+    });
   },
 
   _buildTemplateFunction(str) {
@@ -97,8 +100,8 @@ const core = {
     const _right_ = this.rightDelimiter;
 
     //对分隔符进行转义，支持正则中的元字符，可以是HTML注释 <!  !>
-    const _left = encodeReg(_left_);
-    const _right = encodeReg(_right_);
+    const _left = utils.encodeReg(_left_);
+    const _right = utils.encodeReg(_right_);
 
     str = String(str)
 
