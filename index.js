@@ -4,7 +4,7 @@ const Layout = require('./lib/layout');
 const helpers = require('./lib/helper');
 const utils = require('./lib/utils');
 
-const VERSION = '1.3.2';
+const VERSION = '1.3.3';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
