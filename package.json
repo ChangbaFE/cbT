@@ -1,6 +1,6 @@
 {
   "name": "cb-template",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "唱吧模板引擎",
   "main": "index.js",
   "scripts": {
