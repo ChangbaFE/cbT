@@ -36,8 +36,11 @@ cbT.render(str, data);
 // => 已渲染的 HTML 字符串
 
 // 支持模板继承
-cbT.renderFile(filename, data);
-// => 已渲染的 HTML 字符串
+cbT.renderFile(filename, data, options, (err, data) => {
+  if (!err) {
+    // => data 是已渲染的 HTML 字符串
+  }
+});
 ```
 
 ## 模板语法
