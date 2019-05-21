@@ -64,7 +64,9 @@ cbT.renderFile(filename, data, options, (err, data) => {
 #### block 标签
 
 ```
-<% block 名称 %>内容...<% /block %>
+<% block 名称 %>
+  内容...
+<% /block %>
 ```
 
 在父模板中使用 block 代表定义一个名为“名称”的 block。
@@ -125,23 +127,35 @@ cbT.renderFile(filename, data, options, (err, data) => {
 <% /block %>
 ```
 
+```
+<% block 名称 %>
+  <% call 其它block名称 slot1="插槽内容1" slot2="插槽内容2" %>
+    <% slot 插槽3 %>
+      插槽内容3
+    <% /slot %>
+  <% /call %>
+
+  内容...
+<% /block %>
+```
+
 `call` 用于把当前文件其它 block 名称（支持最近一级父模板）的内容，替换 call 所在位置的内容。其中 `slot` 的意义与上节一样，会替换相应的内容。
 
 #### use 标签
 
 ```
 <% block 名称 %>
-  <% use 其它block名称 %>
+  <% use 其它block名称 slot1="插槽内容1" slot2="插槽内容2" %>
 
   内容...
 <% /block %>
 ```
 
-`use` 是简化版的 `call`，如果不需要替换 `slot` 的内容，可以直接使用 `use`。
+`use` 是简化版的 `call`。
 
 #### 实例
 
-父模板 parent.html :
+父模板 parent.html：
 
 ```html
 <!DOCTYPE html>
@@ -152,11 +166,23 @@ cbT.renderFile(filename, data, options, (err, data) => {
 </head>
 <body>
   <h1>Welcome to <% block name %>测试内容<% /block %>!</h1>
+  <p>
+    <% block test-1 %>
+      测试内容-1
+    <% /block %>
+  </p>
+
+  <p>
+    <% block test-2 %>
+      <small><% child %></small>
+      测试内容-2
+    <% /block %>
+  </p>
 </body>
 </html>
 ```
 
-子模板 welcome.html :
+子模板 welcome.html：
 
 ```html
 <% extends parent %>
@@ -164,6 +190,39 @@ cbT.renderFile(filename, data, options, (err, data) => {
 <% block title %>子模板标题<% /block %>
 
 <% block name %><strong>子模板内容</strong><% /block %>
+
+<% block test-1 %>
+  <% parent %>
+  <strong>子模板内容-1</strong>
+<% /block %>
+
+<% block test-2 %>
+  子模板内容-2
+<% /block %>
+```
+
+最终渲染成：
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to 子模板标题</title>
+</head>
+<body>
+  <h1>Welcome to <strong>子模板内容</strong>!</h1>
+  <p>
+    测试内容-1
+    <strong>子模板内容-1</strong>
+  </p>
+
+  <p>
+    <small>子模板内容-2</small>
+    测试内容-2
+  </p>
+</body>
+</html>
 ```
 
 ### 其他语法
