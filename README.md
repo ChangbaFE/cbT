@@ -28,7 +28,7 @@ $ npm install cb-template
 ```javascript
 const cbT = require('cb-template');
 
-let template = cbT.compile(str);
+const template = cbT.compile(str);
 template(data);
 // => 已渲染的 HTML 字符串
 
@@ -45,13 +45,45 @@ cbT.renderFile(filename, data, options, (err, data) => {
 
 ## 内置方法
 
-### cbT.compile(模板字符串)
+### cbT.compile(str)
 
-### cbT.compileFile()
+编译模板字符串，返回模板函数，不支持模板继承。
 
-### cbT.render()
+参数：
 
-### cbT.renderFile()
+* str: 字符串，输入的模板内容
+
+返回值：
+
+类型：函数，模板函数，用于后续直接渲染模板。
+
+模板函数参数：
+
+* data: 对象，输入的数据
+
+例子：
+
+```javascript
+const template = cbT.compile(str);
+template({ title: '标题', nickname: '昵称' });
+// => 已渲染的 HTML 字符串
+```
+
+### cbT.compileFile(filename, options, callback)
+
+读取模板文件，返回模板函数，支持模板继承。
+
+参数：
+
+* filename: 字符串，模板文件路径，如果设置了 cbT.basePath 则 basePath 为根目录，建议使用绝对路径。
+* options: 对象，编译参数。
+** cache: 布尔，是否开启编译缓存，默认开启
+* callback: 函数，回调函数，编译完成后回调。
+** 回调函数参数: err: 是否有错误；data: 模板函数
+
+### cbT.render(str, data)
+
+### cbT.renderFile(filename, data, options, callback)
 
 ## 模板语法
 
