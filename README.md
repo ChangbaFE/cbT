@@ -28,7 +28,7 @@ $ npm install cb-template
 ```javascript
 const cbT = require('cb-template');
 
-let template = cbT.template(str);
+let template = cbT.compile(str);
 template(data);
 // => 已渲染的 HTML 字符串
 
@@ -42,6 +42,16 @@ cbT.renderFile(filename, data, options, (err, data) => {
   }
 });
 ```
+
+## 内置方法
+
+### cbT.compile(模板字符串)
+
+### cbT.compileFile()
+
+### cbT.render()
+
+### cbT.renderFile()
 
 ## 模板语法
 
@@ -227,4 +237,14 @@ cbT.renderFile(filename, data, options, (err, data) => {
 
 ### 其他语法
 
-（未完待续...）
+#### 输出变量内容
+
+基本用法：`<%=变量%>`
+
+例子：
+
+```javascript
+const cbT = require('cb-template');
+
+cbT.renderFile('filename.html', { title: '标题', nickname: '昵称' });
+```
