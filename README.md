@@ -77,9 +77,9 @@ template({ title: '标题', nickname: '昵称' });
 
 * filename: 字符串，模板文件路径，如果设置了 cbT.basePath 则 basePath 为根目录，建议使用绝对路径。
 * options: 对象，编译参数。
-** cache: 布尔，是否开启编译缓存，默认开启
+  * cache: 布尔，是否开启编译缓存，默认开启
 * callback: 函数，回调函数，编译完成后回调。
-** 回调函数参数: err: 是否有错误；data: 模板函数
+  * 回调函数参数: err: 是否有错误；data: 模板函数
 
 ### cbT.render(str, data)
 
