@@ -43,7 +43,7 @@ cbT.renderFile(filename, data, options, (err, data) => {
 });
 ```
 
-## 内置方法
+## API
 
 ### cbT.compile(str)
 
@@ -64,7 +64,7 @@ cbT.renderFile(filename, data, options, (err, data) => {
 例子：
 
 ```javascript
-const template = cbT.compile(str);
+const template = cbT.compile(`<title><%=title%></title><p><%=nickname%></p>`);
 template({ title: '标题', nickname: '昵称' });
 // => 已渲染的 HTML 字符串
 ```
@@ -79,11 +79,58 @@ template({ title: '标题', nickname: '昵称' });
 * options: 对象，编译参数。
   * cache: 布尔，是否开启编译缓存，默认开启
 * callback: 函数，回调函数，编译完成后回调。
-  * 回调函数参数: err: 是否有错误；data: 模板函数
+  * 回调函数参数: err: 是否有错误；template: 模板函数
+
+例子：
+
+```javascript
+cbT.compileFile('/your/path/filename.html', {}, (err, template) => {
+  template({ title: '标题', nickname: '昵称' });
+  // => 已渲染的 HTML 字符串
+});
+```
 
 ### cbT.render(str, data)
 
+编译模板字符串，并返回渲染后的结果，不支持模板继承。
+
+参数：
+
+* str: 字符串，输入的模板内容
+* data: 对象，用于渲染的数据，对象的 key 会自动转换为模板中的变量名
+
+返回值：
+
+类型：字符串，已渲染的字符串
+
+例子：
+
+```javascript
+cbT.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标题', nickname: '昵称' });
+// => 已渲染的 HTML 字符串
+```
+
 ### cbT.renderFile(filename, data, options, callback)
+
+读取模板文件，并返回渲染后的结果，支持模板继承。
+
+参数：
+
+* filename: 字符串，模板文件路径，如果设置了 cbT.basePath 则 basePath 为根目录，建议使用绝对路径。
+* data: 对象，用于渲染的数据，对象的 key 会自动转换为模板中的变量名
+* options: 对象，编译参数。
+  * cache: 布尔，是否开启编译缓存，默认开启
+* callback: 函数，回调函数，编译完成后回调。
+  * 回调函数参数: err: 是否有错误；content: 渲染后的结果
+
+例子：
+
+```javascript
+cbT.renderFile('/your/path/filename.html', { title: '标题', nickname: '昵称' }, {}, (err, content) => {
+  console.log(content);
+  // => 已渲染的 HTML 字符串
+});
+```
 
 ## 模板语法
 
