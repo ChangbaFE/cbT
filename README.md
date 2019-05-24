@@ -145,6 +145,7 @@ cbT.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标题', n
 * data: 对象，用于渲染的数据，对象的 key 会自动转换为模板中的变量名
 * options: 对象，编译参数。
   * cache: 布尔，是否开启编译缓存，默认开启
+  * cacheName: 字符串，设置缓存名称，默认值 `changba-template-cache`，如果设置过 `cbT.cachePath` 则此值无效
 * callback: 函数，回调函数，编译完成后回调。
   * 回调函数参数: err: 是否有错误；content: 渲染后的结果
 
@@ -156,6 +157,20 @@ cbT.renderFile('/your/path/filename.html', { title: '标题', nickname: '昵称'
   // => 已渲染的 HTML 字符串
 });
 ```
+
+### cbT.getInstance()
+
+获取模板引擎的一个新实例，一般用于单独设置模板引擎的某个选项，比如单独设置左右分隔符。
+
+例子：
+
+```javascript
+const myInstance = cbT.getInstance();
+myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标题', nickname: '昵称' });
+// => 已渲染的 HTML 字符串
+```
+
+注意：获取的新实例不能进行 getInstance() 操作，只能从 cbT 中 getInstance()
 
 ## 模板语法
 
