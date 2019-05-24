@@ -12,8 +12,9 @@ $ npm install cb-template
 
 ## 特性
 
-  * 支持模板继承（Layout）
-  * 灵活的模板语法
+* 支持模板继承（Layout）
+* 模块化模板
+* 灵活的模板语法
 
 ## 实例
 
@@ -500,4 +501,33 @@ cbT.renderFile('/your/path/filename.html', { title: '标题', nickname: '昵称'
     <p>都不是</p>
   <% /if %>
 </div>
+```
+
+#### 定义子模板
+
+一般用于定义一个公共的模板部分，以方便重复使用
+
+基本用法：`<% define 子模板名称(参数) %>子模板内容<% /define %>`
+
+其中 `参数` 为合法变量名，用于在子模板中接收外部参数
+
+例子：
+
+```html
+<% define mySubTemplate(params) %>
+ <p><%=params.nickname%></p>
+ <p><%=params.title%></p>
+<% /define %>
+```
+
+#### 调用子模板
+
+调用已经定义的子模板
+
+基本用法：`<% run 子模板名称(参数对象) %>`
+
+例子：
+
+```html
+<% run mySubTemplate({ nickname: '昵称', title: '标题' }) %>
 ```
