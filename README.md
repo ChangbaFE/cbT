@@ -44,7 +44,7 @@ cbT.renderFile(filename, data, options, (err, data) => {
 });
 ```
 
-## API
+## 选项
 
 ### cbT.leftDelimiter
 
@@ -67,6 +67,8 @@ cbT.renderFile(filename, data, options, (err, data) => {
 ### cbT.defaultExtName
 
 模板文件默认扩展名，默认值为 `.html`
+
+## API
 
 ### cbT.compile(str)
 
