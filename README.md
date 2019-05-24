@@ -46,6 +46,28 @@ cbT.renderFile(filename, data, options, (err, data) => {
 
 ## API
 
+### cbT.leftDelimiter
+
+定义左分隔符，默认值：`<%`
+
+### cbT.rightDelimiter
+
+定义右分隔符，默认值：`%>`
+
+### cbT.basePath
+
+定义读取模板文件的根目录，默认值为空字符串。
+
+例如你想以 `/my/template` 为所有模板的根目录，则设置 `cbT.basePath = '/my/template'`
+
+### cbT.cachePath
+
+模板缓存目录，默认值为系统临时目录。
+
+### cbT.defaultExtName
+
+模板文件默认扩展名，默认值为 `.html`
+
 ### cbT.compile(str)
 
 编译模板字符串，返回模板函数，不支持模板继承。
