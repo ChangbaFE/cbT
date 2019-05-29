@@ -4,6 +4,51 @@
 
 一个支持模板多级继承的 Node.js 服务端模板引擎
 
+## 目录
+
+  * [安装](#安装)
+  * [特性](#特性)
+  * [实例](#实例)
+  * [使用](#使用)
+  * [选项](#选项)
+     * [cbT.leftDelimiter](#cbtleftdelimiter)
+     * [cbT.rightDelimiter](#cbtrightdelimiter)
+     * [cbT.basePath](#cbtbasepath)
+     * [cbT.cachePath](#cbtcachepath)
+     * [cbT.defaultExtName](#cbtdefaultextname)
+  * [API](#api)
+     * [cbT.compile(str)](#cbtcompilestr)
+     * [cbT.compileFile(filename, options, callback)](#cbtcompilefilefilename-options-callback)
+     * [cbT.render(str, data)](#cbtrenderstr-data)
+     * [cbT.renderFile(filename, data, options, callback)](#cbtrenderfilefilename-data-options-callback)
+     * [cbT.getInstance()](#cbtgetinstance)
+  * [模板语法](#模板语法)
+     * [模板继承（Layout）](#模板继承layout)
+        * [extends 标签](#extends-标签)
+        * [block 标签](#block-标签)
+        * [parent 标签](#parent-标签)
+        * [child 标签](#child-标签)
+        * [slot 标签](#slot-标签)
+        * [call 标签](#call-标签)
+        * [use 标签](#use-标签)
+        * [实例](#实例-1)
+     * [其他语法](#其他语法)
+        * [转义后输出变量内容](#转义后输出变量内容)
+        * [不转义输出变量内容](#不转义输出变量内容)
+        * [URL 转义输出变量内容](#url-转义输出变量内容)
+        * [转义 HTML 属性值后输出变量内容](#转义-html-属性值后输出变量内容)
+        * [转义输出数组](#转义输出数组)
+        * [格式化钱数](#格式化钱数)
+        * [内容截取](#内容截取)
+        * [URL 协议自适应](#url-协议自适应)
+        * [转义输出函数返回值](#转义输出函数返回值)
+        * [不转义输出函数返回值](#不转义输出函数返回值)
+        * [定义变量](#定义变量)
+        * [遍历数组](#遍历数组)
+        * [条件输出](#条件输出)
+        * [定义子模板](#定义子模板)
+        * [调用子模板](#调用子模板)
+
 ## 安装
 
 ```bash
