@@ -4,7 +4,7 @@ const Layout = require('./lib/layout');
 const helpers = require('./lib/helper');
 const utils = require('./lib/utils');
 
-const VERSION = '1.3.7';
+const VERSION = '1.3.8';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
@@ -113,16 +113,12 @@ const core = {
       //去掉注释内容  <%* 这里可以任意的注释 *%>
       .replace(new RegExp(_left + '\\*[\\s\\S]*?\\*' + _right, 'gm'), '')
 
-      //用来处理非分隔符内部的内容中含有 斜杠 \ 单引号 ‘ ，处理办法为HTML转义
+      //用来处理非分隔符内部的内容中含有 斜杠 \ 单引号 ‘
       .replace(new RegExp(_left + "(?:(?!" + _right + ")[\\s\\S])*" + _right + "|((?:(?!" + _left + ")[\\s\\S])+)", "g"), (item, $1) => {
         let str = '';
         if ($1) {
-          //将 斜杠 单引 HTML转义
-          str = $1.replace(/\\/g, "&#92;").replace(/'/g, '&#39;');
-          while (/<[^<]*?&#39;[^<]*?>/g.test(str)) {
-            //将标签内的单引号转义为\r  结合最后一步，替换为\'
-            str = str.replace(/(<[^<]*?)&#39;([^<]*?>)/g, '$1\r$2');
-          };
+          //将 斜杠 单引 转义
+          str = $1.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         }
         else {
           str = item;
