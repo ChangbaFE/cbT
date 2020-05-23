@@ -4,7 +4,10 @@
   "description": "唱吧模板引擎",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "eslint": "eslint *.js",
+    "test-spec": "mocha test/*.test.js",
+    "test-cov": "nyc npm run test-spec",
+    "test": "npm run eslint && npm run test-cov"
   },
   "repository": {
     "type": "git",
@@ -20,6 +23,8 @@
   },
   "homepage": "https://github.com/ChangbaFE/cbT#readme",
   "devDependencies": {
-    "eslint": "^6.8.0"
+    "eslint": "^6.8.0",
+    "mocha": "^7.1.2",
+    "nyc": "^15.0.1"
   }
 }
