@@ -106,7 +106,7 @@ describe('lockfile.js', () => {
 
         // Test release without callback parameter - this should cover the if (!releaseCallback) branch
         release();
-        
+
         // Give it a moment to complete the unlock operation
         setTimeout(() => {
           // Verify the lock was released by checking if we can acquire it again
@@ -204,20 +204,21 @@ describe('lockfile.js', () => {
     test('should return true for stat errors other than ENOENT', (done) => {
       // Mock fs.stat to simulate a different error
       const originalStat = fs.stat;
-      
+
       fs.stat = (path, callback) => {
         if (path.endsWith('.lock')) {
           const error = new Error('Permission denied');
           error.code = 'EACCES';
           callback(error);
-        } else {
+        }
+        else {
           originalStat(path, callback);
         }
       };
 
       lockfile.isLocked(testFile, (locked) => {
         expect(locked).toBe(true);
-        
+
         // Restore original function
         fs.stat = originalStat;
         done();
@@ -266,7 +267,7 @@ describe('lockfile.js', () => {
       lockfile.unlock(testFile, (err) => {
         expect(err).toBeTruthy();
         expect(err.message).toBe('Permission denied');
-        
+
         // Restore original function
         fs.rm = originalRm;
         done();
@@ -285,7 +286,7 @@ describe('lockfile.js', () => {
       lockfile.lock(testFile, (err) => {
         expect(err).toBeTruthy();
         expect(err.code).toBe('EACCES');
-        
+
         // Restore original function
         fs.mkdir = originalMkdir;
         done();
@@ -305,7 +306,8 @@ describe('lockfile.js', () => {
             const error = new Error('Permission denied');
             error.code = 'EACCES';
             callback(error);
-          } else {
+          }
+          else {
             // Restore and use original for cleanup
             fs.stat = originalStat;
             originalStat(path, callback);
@@ -315,7 +317,7 @@ describe('lockfile.js', () => {
         lockfile.lock(testFile, (err) => {
           expect(err).toBeTruthy();
           expect(err.code).toBe('EACCES');
-          
+
           // Cleanup
           fs.stat = originalStat;
           done();
@@ -328,7 +330,7 @@ describe('lockfile.js', () => {
       fs.mkdir(lockDir, () => {
         const oldTime = new Date(Date.now() - 6 * 60 * 1000);
         fs.utimes(lockDir, oldTime, oldTime, () => {
-          
+
           // Mock unlock to fail
           const originalRm = fs.rm;
           fs.rm = (path, options, callback) => {
@@ -340,7 +342,7 @@ describe('lockfile.js', () => {
           lockfile.lock(testFile, (err) => {
             expect(err).toBeTruthy();
             expect(err.code).toBe('EACCES');
-            
+
             // Restore original function
             fs.rm = originalRm;
             done();
@@ -354,7 +356,7 @@ describe('lockfile.js', () => {
       fs.mkdir(lockDir, () => {
         const oldTime = new Date(Date.now() - 6 * 60 * 1000);
         fs.utimes(lockDir, oldTime, oldTime, () => {
-          
+
           // Mock mkdir to fail on second attempt
           const originalMkdir = fs.mkdir;
           let callCount = 0;
@@ -365,7 +367,8 @@ describe('lockfile.js', () => {
               const error = new Error('Permission denied');
               error.code = 'EACCES';
               callback(error);
-            } else {
+            }
+            else {
               originalMkdir(path, callback);
             }
           };
@@ -373,7 +376,7 @@ describe('lockfile.js', () => {
           lockfile.lock(testFile, (err) => {
             expect(err).toBeTruthy();
             expect(err.code).toBe('EACCES');
-            
+
             // Restore original function
             fs.mkdir = originalMkdir;
             done();

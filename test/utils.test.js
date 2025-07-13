@@ -207,27 +207,27 @@ describe('utils.js', () => {
       test('should throw error when mkdir fails and stat also fails', () => {
         const originalMkdir = fs.mkdir;
         const originalStat = fs.stat;
-        
+
         // Mock mkdir to fail
         fs.mkdir = (path, mode, callback) => {
           const error = new Error('Permission denied');
           error.code = 'EACCES';
           callback(error);
         };
-        
+
         // Mock stat to also fail
         fs.stat = (path, callback) => {
           const error = new Error('Stat failed');
           error.code = 'ENOENT';
           callback(error);
         };
-        
+
         const testPath = path.join(testDir, 'fail-test');
-        
+
         expect(() => {
           utils.mkdirp(testPath, () => {}, { mode: 0o755 });
         }).toThrow();
-        
+
         // Restore original functions
         fs.mkdir = originalMkdir;
         fs.stat = originalStat;
@@ -236,14 +236,14 @@ describe('utils.js', () => {
       test('should throw error when path exists but is not directory', () => {
         const originalMkdir = fs.mkdir;
         const originalStat = fs.stat;
-        
+
         // Mock mkdir to fail
         fs.mkdir = (path, mode, callback) => {
           const error = new Error('File exists');
           error.code = 'EEXIST';
           callback(error);
         };
-        
+
         // Mock stat to return a file (not directory)
         fs.stat = (path, callback) => {
           const mockStats = {
@@ -251,13 +251,13 @@ describe('utils.js', () => {
           };
           callback(null, mockStats);
         };
-        
+
         const testPath = path.join(testDir, 'not-dir-test');
-        
+
         expect(() => {
           utils.mkdirp(testPath, () => {}, { mode: 0o755 });
         }).toThrow();
-        
+
         // Restore original functions
         fs.mkdir = originalMkdir;
         fs.stat = originalStat;

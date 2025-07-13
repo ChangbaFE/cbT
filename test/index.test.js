@@ -287,7 +287,7 @@ describe('index.js', () => {
     test('should not escape HTML when escape is false', () => {
       const instance = cbT.getInstance();
       instance.escape = false;
-      
+
       const template = instance.compile('<%=html%>');
       const result = template({ html: '<script>alert("XSS")</script>' });
       expect(result).toBe('<script>alert("XSS")</script>');
@@ -296,7 +296,7 @@ describe('index.js', () => {
     test('should handle undefined variables when escape is false', () => {
       const instance = cbT.getInstance();
       instance.escape = false;
-      
+
       const template = instance.compile('<%=undefinedVar%>');
       const result = template({});
       expect(result).toBe('');
@@ -305,7 +305,7 @@ describe('index.js', () => {
     test('should handle null variables when escape is false', () => {
       const instance = cbT.getInstance();
       instance.escape = false;
-      
+
       const template = instance.compile('<%=nullVar%>');
       const result = template({ nullVar: null });
       expect(result).toBe('');
