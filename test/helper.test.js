@@ -83,8 +83,6 @@ describe('helper.js', () => {
       expect(helpers.encodeEventHTML('\\r')).toBe('\r');         // 转义的回车符变成真正的回车符
     });
 
-    test('should convert non-string values to string for event HTML encoding', () => {
-    });
   });
 
   describe('forEachArray', () => {

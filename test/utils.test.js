@@ -59,7 +59,7 @@ describe('utils.js', () => {
 
     beforeEach(() => {
       // 创建临时测试目录和文件
-      testDir = path.join(os.tmpdir(), 'cbt-test-' + Date.now() + '-' + Math.random() + '-' + Math.random());
+      testDir = path.join(os.tmpdir(), 'cbt-test-' + Date.now() + '-' + Math.random());
       testFile = path.join(testDir, 'test.txt');
       fs.mkdirSync(testDir);
       fs.writeFileSync(testFile, 'test content');
