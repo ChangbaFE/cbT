@@ -10,7 +10,8 @@
     "node": true,
     "es6": true,
     "jasmine": true,
-    "atomtest": true
+    "atomtest": true,
+    "jest": true
   },
   "extends": "eslint:recommended",
   "rules": {

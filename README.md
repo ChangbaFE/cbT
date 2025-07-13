@@ -1,6 +1,6 @@
 # cbT.js
 
-[![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template)
+[![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template) [![codecov](https://codecov.io/github/hex-ci/cbT/graph/badge.svg?token=HBHJLIG91R)](https://codecov.io/github/hex-ci/cbT)
 
 一个支持模板多级继承的 Node.js 服务端模板引擎
 
@@ -247,6 +247,14 @@ myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标
 
 在子模板中使用 block 代表替换父模板中同名的 block。
 
+```
+<% block 名称 hide %>
+  内容...
+<% /block %>
+```
+
+`hide` 属性表示在子模板中隐藏父模板中同名的 block。
+
 #### parent 标签
 
 ```
@@ -463,7 +471,7 @@ myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标
 
 ```html
 <div><%:a=listing%></div> <!-- 输出 <div>元素0<br>元素1<br>元素2<div> -->
-<div><%:a=listing | ,%></div> <!-- 输出 <div>元素0,元素1,元素2<div> -->
+<div><%:a=listing|,%></div> <!-- 输出 <div>元素0,元素1,元素2<div> -->
 ```
 
 #### 格式化钱数
