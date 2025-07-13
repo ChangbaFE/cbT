@@ -1,18 +1,16 @@
-module.exports = {
+export default {
   testEnvironment: 'node',
+  transform: {
+    '\\.[jt]sx?$': 'babel-jest'
+  },
   collectCoverageFrom: [
     'index.js',
     'lib/**/*.js',
     '!node_modules/**'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
   testMatch: [
     '<rootDir>/test/**/*.test.js'
   ],
-  testPathIgnorePatterns: [
-    '/node_modules/'
-  ],
-  moduleFileExtensions: ['js', 'json'],
   verbose: true
 };

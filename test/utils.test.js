@@ -1,9 +1,8 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const utils = require('../lib/utils');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import * as utils from '../lib/utils.js';
 
 describe('utils.js', () => {
   describe('getHash', () => {

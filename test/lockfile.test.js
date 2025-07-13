@@ -1,9 +1,8 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const lockfile = require('../lib/lockfile');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import * as lockfile from '../lib/lockfile.js';
 
 describe('lockfile.js', () => {
   let testFile;

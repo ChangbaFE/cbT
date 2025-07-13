@@ -1,10 +1,9 @@
-'use strict';
+import cbT from '../index.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const Layout = require('../lib/layout');
-const cbT = require('../index');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import Layout from '../lib/layout.js';
 
 describe('layout.js', () => {
   let testDir;

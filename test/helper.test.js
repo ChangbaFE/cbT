@@ -1,6 +1,4 @@
-'use strict';
-
-const helpers = require('../lib/helper');
+import helpers from '../lib/helper.js';
 
 describe('helper.js', () => {
   describe('run', () => {

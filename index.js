@@ -1,10 +1,8 @@
-'use strict';
+import Layout from './lib/layout.js';
+import helpers from './lib/helper.js';
+import * as utils from './lib/utils.js';
 
-const Layout = require('./lib/layout');
-const helpers = require('./lib/helper');
-const utils = require('./lib/utils');
-
-const VERSION = '1.3.8';
+const VERSION = '2.0.0';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
@@ -284,9 +282,9 @@ const core = {
 
 };
 
-
-module.exports = Object.assign({
+export default {
+  ...core,
   getInstance() {
-    return Object.assign({}, core);
+    return { ...core };
   }
-}, core);
+};
