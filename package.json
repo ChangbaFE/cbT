@@ -1,9 +1,13 @@
 {
   "name": "cb-template",
-  "version": "2.0.0",
-  "description": "唱吧模板引擎",
+  "version": "3.0.0",
+  "description": "Changba Template Engine",
+  "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "files": [
     "index.js",
     "index.d.ts",
@@ -38,7 +42,9 @@
   },
   "homepage": "https://github.com/ChangbaFE/cbT#readme",
   "devDependencies": {
-    "eslint": "^6.8.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4",
+    "eslint": "^8.57.1",
     "jest": "^30.0.4",
     "typescript": "^5.8.3"
   }

@@ -1,9 +1,8 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const lockfile = require('../lib/lockfile');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import * as lockfile from '../lib/lockfile.js';
 
 describe('lockfile.js', () => {
   let testFile;
@@ -11,7 +10,7 @@ describe('lockfile.js', () => {
   let testDir;
 
   beforeEach(() => {
-    // 创建测试文件路径
+    // Create test file path
     testDir = path.join(os.tmpdir(), 'cbt-lockfile-test-' + Date.now() + '-' + Math.random());
     fs.mkdirSync(testDir, { recursive: true });
     testFile = path.join(testDir, 'test.txt');
@@ -19,7 +18,7 @@ describe('lockfile.js', () => {
   });
 
   afterEach((done) => {
-    // 清理测试锁目录和测试目录
+    // Clean up test lock directory and test directory
     fs.rm(lockDir, { recursive: true, force: true }, () => {
       fs.rmSync(testDir, { recursive: true, force: true });
       done();
@@ -32,14 +31,14 @@ describe('lockfile.js', () => {
         expect(err).toBeNull();
         expect(typeof release).toBe('function');
 
-        // 检查锁目录是否存在
+        // Check if lock directory exists
         fs.stat(lockDir, (err, stats) => {
           expect(err).toBeNull();
           expect(stats.isDirectory()).toBe(true);
 
-          // 释放锁
+          // Release lock
           release(() => {
-            // 检查锁目录是否已删除
+            // Check if lock directory has been deleted
             fs.stat(lockDir, (err) => {
               expect(err.code).toBe('ENOENT');
               done();
@@ -50,24 +49,24 @@ describe('lockfile.js', () => {
     });
 
     test('should not acquire lock if already locked', (done) => {
-      // 第一次获取锁
+      // First time acquiring lock
       lockfile.lock(testFile, (err1, release1) => {
         expect(err1).toBeNull();
 
         let secondLockCalled = false;
 
-        // 尝试第二次获取锁（应该失败）
+        // Attempt to acquire lock second time (should fail)
         lockfile.lock(testFile, (err2) => {
           secondLockCalled = true;
           expect(err2).toBeTruthy();
           expect(err2.code).toBe('ELOCKED');
         });
 
-        // 等待一段时间确认第二次获取锁被调用
+        // Wait for a while to confirm second lock acquisition was called
         setTimeout(() => {
           expect(secondLockCalled).toBe(true);
 
-          // 释放第一个锁
+          // Release first lock
           release1(() => {
             done();
           });
@@ -76,17 +75,17 @@ describe('lockfile.js', () => {
     });
 
     test('should handle stale locks', (done) => {
-      // 手动创建一个过期的锁目录
+      // Manually create an expired lock directory
       fs.mkdir(lockDir, (err) => {
         if (err && err.code !== 'EEXIST') {
           return done(err);
         }
 
-        // 修改锁目录的时间为6分钟前（超过5分钟超时时间）
+        // Modify lock directory time to 6 minutes ago (exceeds 5 minute timeout)
         const oldTime = new Date(Date.now() - 6 * 60 * 1000);
         fs.utimes(lockDir, oldTime, oldTime, () => {
 
-          // 现在应该能够获取锁
+          // Should now be able to acquire lock
           lockfile.lock(testFile, (err, release) => {
             expect(err).toBeNull();
             expect(typeof release).toBe('function');
@@ -123,12 +122,12 @@ describe('lockfile.js', () => {
 
   describe('unlock', () => {
     test('should remove lock directory', (done) => {
-      // 先创建锁
+      // First create lock
       fs.mkdir(lockDir, () => {
         lockfile.unlock(testFile, (err) => {
           expect(err).toBeUndefined();
 
-          // 检查锁目录是否已删除
+          // Check if lock directory has been deleted
           fs.stat(lockDir, (err) => {
             expect(err.code).toBe('ENOENT');
             done();
@@ -168,13 +167,13 @@ describe('lockfile.js', () => {
     });
 
     test('should return false for stale locks', (done) => {
-      // 手动创建一个过期的锁目录
+      // Manually create an expired lock directory
       fs.mkdir(lockDir, (err) => {
         if (err && err.code !== 'EEXIST') {
           return done(err);
         }
 
-        // 修改锁目录的时间为6分钟前
+        // Modify lock directory time to 6 minutes ago
         const oldTime = new Date(Date.now() - 6 * 60 * 1000);
         fs.utimes(lockDir, oldTime, oldTime, () => {
 
@@ -187,13 +186,13 @@ describe('lockfile.js', () => {
     });
 
     test('should return true for error cases other than ENOENT', (done) => {
-      // 创建一个锁文件而不是目录（模拟错误情况）
+      // Create a lock file instead of directory (simulate error condition)
       const lockFile = lockDir;
       fs.writeFile(lockFile, 'lock', () => {
         lockfile.isLocked(testFile, (locked) => {
           expect(locked).toBe(true);
 
-          // 清理
+          // Cleanup
           fs.unlink(lockFile, () => {
             done();
           });
@@ -231,18 +230,18 @@ describe('lockfile.js', () => {
       const results = [];
       let completed = 0;
 
-      // 尝试3次并发获取锁
+      // Attempt 3 concurrent lock acquisitions
       for (let i = 0; i < 3; i++) {
         lockfile.lock(testFile, (err, release) => {
           if (!err) {
             results.push(i);
 
-            // 持有锁100ms
+            // Hold lock for 100ms
             setTimeout(() => {
               release(() => {
                 completed++;
                 if (completed === results.length) {
-                  // 只有一个应该成功获取锁
+                  // Only one should successfully acquire the lock
                   expect(results.length).toBe(1);
                   done();
                 }

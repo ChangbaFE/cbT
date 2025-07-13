@@ -1,6 +1,4 @@
-'use strict';
-
-const helpers = require('../lib/helper');
+import helpers from '../lib/helper.js';
 
 describe('helper.js', () => {
   describe('run', () => {
@@ -76,11 +74,10 @@ describe('helper.js', () => {
     });
 
     test('should handle escaped characters differently', () => {
-      // 注意：这里发现了一个潜在的BUG
-      expect(helpers.encodeEventHTML('\\\\test')).toBe('\\test'); // 双反斜杠变成单反斜杠
-      expect(helpers.encodeEventHTML('\\/test')).toBe('/test');   // 反斜杠+斜杠变成斜杠
-      expect(helpers.encodeEventHTML('\\n')).toBe('\n');         // 转义的换行符变成真正的换行符
-      expect(helpers.encodeEventHTML('\\r')).toBe('\r');         // 转义的回车符变成真正的回车符
+      expect(helpers.encodeEventHTML('\\\\test')).toBe('\\test'); // Double backslash becomes single backslash
+      expect(helpers.encodeEventHTML('\\/test')).toBe('/test');   // Backslash+slash becomes slash
+      expect(helpers.encodeEventHTML('\\n')).toBe('\n');         // Escaped newline becomes real newline
+      expect(helpers.encodeEventHTML('\\r')).toBe('\r');         // Escaped carriage return becomes real carriage return
     });
 
   });
@@ -122,7 +119,7 @@ describe('helper.js', () => {
     test('should return true for objects', () => {
       expect(helpers.isObject({})).toBe(true);
       expect(helpers.isObject({ key: 'value' })).toBe(true);
-      expect(helpers.isObject([])).toBe(true); // 数组也是对象
+      expect(helpers.isObject([])).toBe(true); // Arrays are also objects
     });
 
     test('should return true for functions', () => {
@@ -150,7 +147,7 @@ describe('helper.js', () => {
 
     test('should handle objects with prototype properties', () => {
       const obj = Object.create({ protoKey: 'value' });
-      expect(helpers.isEmptyObject(obj)).toBe(true); // 只检查自有属性
+      expect(helpers.isEmptyObject(obj)).toBe(true); // Only checks own properties
     });
 
     test('should handle objects with non-enumerable properties', () => {

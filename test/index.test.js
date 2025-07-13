@@ -1,21 +1,20 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const cbT = require('../index');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import cbT from '../index.js';
 
 describe('index.js', () => {
   let testDir;
 
   beforeEach(() => {
-    // 创建临时测试目录
+    // Create temporary test directory
     testDir = path.join(os.tmpdir(), 'cbt-test-' + Date.now() + '-' + Math.random());
     fs.mkdirSync(testDir, { recursive: true });
   });
 
   afterEach(() => {
-    // 清理测试目录
+    // Clean up test directory
     fs.rmSync(testDir, { recursive: true, force: true });
   });
 
@@ -211,15 +210,15 @@ describe('index.js', () => {
     test('should create independent instance', () => {
       const instance = cbT.getInstance();
 
-      // 修改实例的设置
+      // Modify instance settings
       instance.leftDelimiter = '{{';
       instance.rightDelimiter = '}}';
 
-      // 原始实例应该不受影响
+      // Original instance should not be affected
       expect(cbT.leftDelimiter).toBe('<%');
       expect(cbT.rightDelimiter).toBe('%>');
 
-      // 新实例应该能使用新的分隔符
+      // New instance should be able to use new delimiters
       const result = instance.render('Hello {{=name}}!', { name: 'World' });
       expect(result).toBe('Hello World!');
     });

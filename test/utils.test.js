@@ -1,9 +1,8 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
-const utils = require('../lib/utils');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import * as utils from '../lib/utils.js';
 
 describe('utils.js', () => {
   describe('getHash', () => {
@@ -58,7 +57,7 @@ describe('utils.js', () => {
     let testFile;
 
     beforeEach(() => {
-      // 创建临时测试目录和文件
+      // Create temporary test directory and file
       testDir = path.join(os.tmpdir(), 'cbt-test-' + Date.now() + '-' + Math.random());
       testFile = path.join(testDir, 'test.txt');
       fs.mkdirSync(testDir);
@@ -66,7 +65,7 @@ describe('utils.js', () => {
     });
 
     afterEach(() => {
-      // 清理测试文件和目录
+      // Clean up test files and directory
       try {
         if (fs.existsSync(testFile)) {
           fs.unlinkSync(testFile);
@@ -76,7 +75,7 @@ describe('utils.js', () => {
         }
       }
       catch (e) {
-        // 忽略清理错误
+        // Ignore cleanup errors
       }
     });
 
@@ -168,23 +167,23 @@ describe('utils.js', () => {
       });
 
       test('should handle existing directory', (done) => {
-        // 设置较短的超时时间来避免长时间等待
+        // Set shorter timeout to avoid long waits
         const timeout = setTimeout(() => {
-          // 如果函数没有调用callback，我们认为这是预期行为
+          // If function doesn't call callback, we consider this expected behavior
           done();
         }, 100);
 
         try {
           utils.mkdirp(testDir, (made) => {
             clearTimeout(timeout);
-            // 如果callback被调用，检查返回值
+            // If callback is called, check return value
             expect(made).toBeDefined();
             done();
           });
         }
         catch (error) {
           clearTimeout(timeout);
-          // 如果抛出异常，这也是可接受的行为
+          // If exception is thrown, this is also acceptable behavior
           expect(error).toBeDefined();
           done();
         }
@@ -197,7 +196,7 @@ describe('utils.js', () => {
         utils.mkdirp(newDir, () => {
           expect(fs.existsSync(newDir)).toBe(true);
           const stats = fs.statSync(newDir);
-          // Note: 在某些系统上，mode可能会被umask修改
+          // Note: On some systems, mode may be modified by umask
           expect(stats.mode & 0o777).toBeTruthy();
           fs.rmSync(newDir, { recursive: true, force: true });
           done();

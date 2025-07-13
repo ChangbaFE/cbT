@@ -2,84 +2,84 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 项目概述
+## Project Overview
 
-cbT.js 是一个支持模板多级继承的 Node.js 服务端模板引擎。该引擎提供了丰富的模板语法，包括模板继承、变量输出、条件控制、循环遍历等功能。
+cbT.js is a Node.js server-side template engine that supports multi-level template inheritance. The engine provides rich template syntax, including template inheritance, variable output, conditional control, loop iteration, and other features.
 
-## 开发命令
+## Development Commands
 
-### 代码检查
+### Code Linting
 ```bash
 npm run eslint
 ```
 
-### 测试相关
+### Testing
 ```bash
-# 运行所有测试
+# Run all tests
 npm test
 
-# 运行单个测试文件
+# Run individual test files
 npm test -- test/index.test.js
 npm test -- test/helper.test.js
 npm test -- test/layout.test.js
 npm test -- test/lockfile.test.js
 npm test -- test/utils.test.js
 
-# 监听模式运行测试
+# Run tests in watch mode
 npm run test:watch
 
-# 运行测试并生成覆盖率报告
+# Run tests and generate coverage report
 npm run test:coverage
 ```
 
-## 核心架构
+## Core Architecture
 
-### 主要文件结构
-- `index.js` - 模板引擎核心入口，包含编译和渲染逻辑
-- `lib/layout.js` - 模板继承系统，处理 extends、block 等指令
-- `lib/helper.js` - 辅助函数集合，包含 HTML 转义、数组处理等工具
-- `lib/lockfile.js` - 文件锁机制，用于缓存文件的并发安全
-- `lib/utils.js` - 通用工具函数，包含文件操作、哈希生成等
+### Main File Structure
+- `index.js` - Template engine core entry point, containing compilation and rendering logic
+- `lib/layout.js` - Template inheritance system, handling extends, block and other directives
+- `lib/helper.js` - Helper function collection, containing HTML escaping, array processing and other utilities
+- `lib/lockfile.js` - File locking mechanism for cache file concurrency safety
+- `lib/utils.js` - Common utility functions, including file operations, hash generation, etc.
 
-### 模板语法特性
-- **模板继承系统**: 支持 extends、block、parent、child、slot、call、use 指令
-- **变量输出**: 支持 HTML 转义、URL 转义、不转义等多种输出方式
-- **控制结构**: if/else、foreach 循环
-- **安全特性**: 默认 HTML 转义防止 XSS 攻击
-- **缓存机制**: 支持模板编译缓存，提升性能
+### Template Syntax Features
+- **Template Inheritance System**: Supports extends, block, parent, child, slot, call, use directives
+- **Variable Output**: Supports HTML escaping, URL escaping, unescaped output and other output methods
+- **Control Structures**: if/else, foreach loops
+- **Security Features**: Default HTML escaping to prevent XSS attacks
+- **Caching Mechanism**: Supports template compilation caching for improved performance
 
-### 关键配置
-- 默认分隔符: `<%` 和 `%>`
-- 默认扩展名: `.html`
-- 支持自定义 basePath 和 cachePath
-- 默认开启 HTML 转义
+### Key Configuration
+- Default delimiters: `<%` and `%>`
+- Default extension: `.html`
+- Supports custom basePath and cachePath
+- HTML escaping enabled by default
 
-### 模板编译流程
-1. 解析模板语法，转换为 JavaScript 代码
-2. 处理模板继承关系（如果存在 extends）
-3. 合并 block 内容
-4. 生成最终的模板函数
-5. 缓存编译结果（可选）
+### Template Compilation Process
+1. Parse template syntax and convert to JavaScript code
+2. Handle template inheritance relationships (if extends exists)
+3. Merge block content
+4. Generate final template function
+5. Cache compilation result (optional)
 
-### 缓存策略
-- 基于文件修改时间检测缓存有效性
-- 使用文件锁确保并发安全
-- 缓存文件包含版本信息和依赖文件时间戳
+### Caching Strategy
+- Cache validity detection based on file modification time
+- Use file locks to ensure concurrency safety
+- Cache files contain version information and dependency file timestamps
 
-## 测试说明
+## Testing Instructions
 
-测试文件位于 `test/` 目录，使用 Jest 作为测试框架。测试覆盖：
-- `index.test.js` - 核心功能测试
-- `helper.test.js` - 辅助函数测试
-- `layout.test.js` - 模板继承系统测试
-- `lockfile.test.js` - 文件锁机制测试
-- `utils.test.js` - 工具函数测试
+Test files are located in the `test/` directory, using Jest as the testing framework. Test coverage includes:
+- `index.test.js` - Core functionality tests
+- `helper.test.js` - Helper function tests
+- `layout.test.js` - Template inheritance system tests
+- `lockfile.test.js` - File locking mechanism tests
+- `utils.test.js` - Utility function tests
 
-## 代码风格
+## Code Style
 
-项目使用 ESLint 进行代码检查，主要规则：
-- 2 空格缩进
-- 禁用 console 检查
-- 强制使用 const（prefer-const）
-- Stroustrup 大括号风格
-- 严格的语法检查（无未使用变量、无未定义变量等）
+The project uses ESLint for code linting with the following main rules:
+- 2-space indentation
+- Console checks disabled
+- Enforce const usage (prefer-const)
+- Stroustrup brace style
+- Strict syntax checks (no unused variables, no undefined variables, etc.)
