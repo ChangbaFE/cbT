@@ -46,6 +46,12 @@ const core = {
 
   // 编译模板文件，支持模板继承
   compileFile(filename, options = {}, callback) {
+    // Handle parameter overloading: check actual number of arguments
+    if (arguments.length === 2) {
+      callback = options;
+      options = {};
+    }
+
     const instance = new Layout(this);
 
     instance.make(filename, options, (err, content) => {
@@ -56,6 +62,12 @@ const core = {
 
   // 渲染模板文件，支持模板继承
   renderFile(filename, data, options = {}, callback) {
+    // Handle parameter overloading: check actual number of arguments
+    if (arguments.length === 3) {
+      callback = options;
+      options = {};
+    }
+
     this.compileFile(filename, options, (err, func) => {
       // 返回渲染后的内容
       callback(err, func(data));
@@ -78,14 +90,14 @@ const core = {
         ${TEMPLATE_VAR_NAME} = null;
       }
       let ${TEMPLATE_SUB} = {};
-      let ${TEMPLATE_OUT} = '${str}';
+      let ${TEMPLATE_OUT} /* init */ = '${str}';
       return ${TEMPLATE_OUT};
     `;
 
-    // console.log(funcBody.replace(/\\n/g, '\n'));
-
     // 删除无效指令
     funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+?=\\s*'';`, 'g'), '');
+
+    // console.log(funcBody.replace(/\\n/g, '\n'));
 
     const func = new Function(TEMPLATE_HELPER, TEMPLATE_OBJECT, SUB_TEMPLATE, funcBody);
 
@@ -113,7 +125,7 @@ const core = {
       //去掉注释内容  <%* 这里可以任意的注释 *%>
       .replace(new RegExp(_left + '\\*[\\s\\S]*?\\*' + _right, 'gm'), '')
 
-      //用来处理非分隔符内部的内容中含有 斜杠 \ 单引号 ‘
+      //用来处理非分隔符内部的内容中含有 斜杠 \ 单引号 '
       .replace(new RegExp(_left + "(?:(?!" + _right + ")[\\s\\S])*" + _right + "|((?:(?!" + _left + ")[\\s\\S])+)", "g"), (item, $1) => {
         let str = '';
         if ($1) {
@@ -201,7 +213,7 @@ const core = {
     if (this.escape) {
       str = str
 
-        //找到 \t=任意一个字符%> 替换为 ‘，任意字符,'
+        //找到 \t=任意一个字符%> 替换为 '，任意字符,'
         //即替换简单变量  \t=data%> 替换为 ',data,'
         //默认HTML转义  也支持HTML转义写法<%:h=value%>
         .replace(new RegExp("\\t=(.*?)" + _right, "g"),
@@ -265,7 +277,7 @@ const core = {
       // 即去掉结尾符，生成字符串拼接
       .split(_right_).join(`${TEMPLATE_OUT}+='`);
 
-    //console.log(str);
+    // console.log(str);
 
     return str;
   }
