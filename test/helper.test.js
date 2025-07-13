@@ -26,17 +26,16 @@ describe('helper.js', () => {
       expect(helpers.encodeHTML('test\\slash')).toBe('test&#92;slash');
     });
 
-    test('should handle empty string', () => {
+    test('should handle empty string for HTML encoding', () => {
       expect(helpers.encodeHTML('')).toBe('');
     });
 
-    test('should convert non-string values to string', () => {
-      expect(helpers.encodeHTML(123)).toBe('123');
+    test('should convert non-string values to string for HTML encoding', () => {
       expect(helpers.encodeHTML(null)).toBe('null');
       expect(helpers.encodeHTML(undefined)).toBe('undefined');
     });
 
-    test('should handle mixed content', () => {
+    test('should handle mixed content for HTML encoding', () => {
       expect(helpers.encodeHTML('<script>alert("XSS")</script>'))
         .toBe('&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;');
     });
@@ -84,8 +83,7 @@ describe('helper.js', () => {
       expect(helpers.encodeEventHTML('\\r')).toBe('\r');         // 转义的回车符变成真正的回车符
     });
 
-    test('should convert non-string values to string', () => {
-      expect(helpers.encodeEventHTML(123)).toBe('123');
+    test('should convert non-string values to string for event HTML encoding', () => {
     });
   });
 

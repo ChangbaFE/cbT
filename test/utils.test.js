@@ -23,7 +23,7 @@ describe('utils.js', () => {
       expect(hash1).not.toBe(hash2);
     });
 
-    test('should handle empty string', () => {
+    test('should handle empty string for hash generation', () => {
       const hash = utils.getHash('');
       expect(hash).toMatch(/^[a-f0-9]{32}$/);
     });
@@ -43,11 +43,11 @@ describe('utils.js', () => {
       expect(utils.encodeReg('abc123')).toBe('abc123');
     });
 
-    test('should handle empty string', () => {
+    test('should handle empty string for regex encoding', () => {
       expect(utils.encodeReg('')).toBe('');
     });
 
-    test('should handle mixed content', () => {
+    test('should handle mixed content for regex encoding', () => {
       expect(utils.encodeReg('test.js')).toBe('test\\.js');
       expect(utils.encodeReg('(hello)')).toBe('\\(hello\\)');
     });

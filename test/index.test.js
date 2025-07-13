@@ -231,7 +231,7 @@ describe('index.js', () => {
   });
 
   describe('file operations', () => {
-    test('renderFile should render file template', (done) => {
+    test('should render template file with data', (done) => {
       const templatePath = path.join(testDir, 'test.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
@@ -243,7 +243,7 @@ describe('index.js', () => {
       });
     });
 
-    test('compileFile should compile file template', (done) => {
+    test('should compile template file into function', (done) => {
       const templatePath = path.join(testDir, 'test.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
@@ -275,7 +275,7 @@ describe('index.js', () => {
       }).toThrow();
     });
 
-    test('should handle invalid variable references gracefully', () => {
+    test('should throw error for invalid nested property access', () => {
       const template = '<%=a.b.c.d%>';
       expect(() => {
         cbT.render(template, { a: {} });
@@ -313,7 +313,7 @@ describe('index.js', () => {
   });
 
   describe('default parameters', () => {
-    test('compileFile should work without options parameter', (done) => {
+    test('should work without options parameter for compileFile', (done) => {
       const templatePath = path.join(testDir, 'test-no-options.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
@@ -327,7 +327,7 @@ describe('index.js', () => {
       });
     });
 
-    test('renderFile should work without options parameter', (done) => {
+    test('should work without options parameter for renderFile', (done) => {
       const templatePath = path.join(testDir, 'test-no-options2.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
@@ -339,7 +339,7 @@ describe('index.js', () => {
       });
     });
 
-    test('compileFile should use default options when explicitly passed undefined', (done) => {
+    test('should use default options in compileFile when undefined', (done) => {
       const templatePath = path.join(testDir, 'test-undefined-options.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
@@ -354,7 +354,7 @@ describe('index.js', () => {
       });
     });
 
-    test('renderFile should use default options when explicitly passed undefined', (done) => {
+    test('should use default options in renderFile when undefined', (done) => {
       const templatePath = path.join(testDir, 'test-undefined-options2.html');
       fs.writeFileSync(templatePath, 'Hello <%=name%>!');
 
