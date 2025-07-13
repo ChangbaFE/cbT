@@ -1,6 +1,6 @@
 {
   "name": "cb-template",
-  "version": "1.3.9",
+  "version": "2.0.0",
   "description": "唱吧模板引擎",
   "main": "index.js",
   "types": "index.d.ts",
@@ -23,7 +23,7 @@
   },
   "keywords": [
     "template",
-    "template-engine", 
+    "template-engine",
     "changba",
     "cbT",
     "server-side-template",
