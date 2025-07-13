@@ -2,7 +2,7 @@
 
 [![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template) [![codecov](https://codecov.io/github/hex-ci/cbT/graph/badge.svg?token=HBHJLIG91R)](https://codecov.io/github/hex-ci/cbT)
 
-一个支持模板多级继承的 Node.js 服务端模板引擎
+一个支持模板多级继承的 Node.js 服务端模板引擎。
 
 \[ [English](README.md) | 中文 \]
 

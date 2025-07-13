@@ -2,7 +2,7 @@
 
 [![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template) [![codecov](https://codecov.io/github/hex-ci/cbT/graph/badge.svg?token=HBHJLIG91R)](https://codecov.io/github/hex-ci/cbT)
 
-A Node.js server-side template engine that supports multi-level template inheritance
+A Node.js server-side template engine that supports multi-level template inheritance.
 
 \[ English | [中文](README_zh.md) \]
 
