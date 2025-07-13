@@ -428,7 +428,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should handle successful cache hit', (done) => {
+    test('should cache compiled layout templates correctly', (done) => {
       const content = '<% block test %>Cache Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'cachetest.html'), content);
 
@@ -436,7 +436,7 @@ describe('layout.js', () => {
       layout.make('cachetest.html', { cache: true }, (err1, content1) => {
         expect(err1).toBeNull();
 
-        // Second call should hit cache (line 72)
+        // Second call should hit cache
         layout.make('cachetest.html', { cache: true }, (err2, content2) => {
           expect(err2).toBeNull();
           expect(content1).toBe(content2);
@@ -831,7 +831,7 @@ describe('layout.js', () => {
       layout.make('cache-validation.html', { cache: true }, (err1, content1) => {
         expect(err1).toBeNull();
 
-        // Second call should validate cache and return cached content (line 501)
+        // Second call should validate cache and return cached content
         layout.make('cache-validation.html', { cache: true }, (err2, content2) => {
           expect(err2).toBeNull();
           expect(content1).toBe(content2);
@@ -842,7 +842,7 @@ describe('layout.js', () => {
   });
 
   describe('remove command with content', () => {
-    test('should test removeCommandWithContent method', (done) => {
+    test('should remove command content from template strings', (done) => {
       // Create a layout instance to test the method directly
       const coreInstance = cbT.getInstance();
       coreInstance.basePath = testDir;
@@ -858,23 +858,38 @@ describe('layout.js', () => {
   });
 
   describe('cache edge cases', () => {
-    test('should handle cache when files are locked', (done) => {
-      const content = '<% block test %>Lock Cache Test<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'locked-cache.html'), content);
 
-      // Mock lockfile.isLocked to always return true (locked)
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        callback(true); // Always locked
-      };
+    test('should handle locked cache files during cache retrieval', (done) => {
+      const content = '<% block test %>Cache Lock Test<% /block %>';
+      fs.writeFileSync(path.join(testDir, 'cache-lock.html'), content);
 
-      layout.make('locked-cache.html', { cache: true }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Lock Cache Test');
+      // Create cache first
+      layout.make('cache-lock.html', { cache: true }, (err1) => {
+        expect(err1).toBeNull();
 
-        // Restore original function
-        require('../lib/lockfile').isLocked = originalIsLocked;
-        done();
+        // Now mock the isLocked function to simulate cache lock
+        const originalIsLocked = require('../lib/lockfile').isLocked;
+        require('../lib/lockfile').isLocked = (filePath, callback) => {
+          // Return true for cache files (triggers line 469)
+          callback(true);
+        };
+
+        // Also mock fileExists to ensure cache file exists check passes
+        const originalFileExists = require('../lib/utils').fileExists;
+        require('../lib/utils').fileExists = (filePath, callback) => {
+          callback(true); // Cache file exists
+        };
+
+        // This should trigger the cache lock path (line 469)
+        layout.make('cache-lock.html', { cache: true }, (err2, content2) => {
+          expect(err2).toBeNull();
+          expect(content2).toContain('Cache Lock Test');
+
+          // Restore original functions
+          require('../lib/lockfile').isLocked = originalIsLocked;
+          require('../lib/utils').fileExists = originalFileExists;
+          done();
+        });
       });
     });
 
@@ -897,6 +912,31 @@ describe('layout.js', () => {
   });
 
   describe('comprehensive edge cases', () => {
+    test('should handle block hide mode specifically', (done) => {
+      const parentContent = `
+        <% block content %>
+          <% block visible %>Visible Content<% /block %>
+          <% block hidden hide %>Hidden Content<% /block %>
+        <% /block %>
+      `;
+      fs.writeFileSync(path.join(testDir, 'parent.html'), parentContent);
+
+      const childContent = `<% extends parent %>
+<% block content %>
+  <% block visible %>Child Visible<% /block %>
+  <% block hidden hide %>Child Hidden<% /block %>
+<% /block %>`;
+      fs.writeFileSync(path.join(testDir, 'hide-mode.html'), childContent);
+
+      layout.make('hide-mode.html', { cache: false }, (err, content) => {
+        expect(err).toBeNull();
+        expect(content).toContain('Child Visible');
+        expect(content).not.toContain('Hidden Content');
+        expect(content).not.toContain('Child Hidden');
+        done();
+      });
+    });
+
     test('should handle multiple file inheritance with successful cache hit', (done) => {
       // Create a chain of files to trigger multiple file time checks
       const grandparentContent = '<% block content %>Grandparent<% /block %>';
@@ -915,7 +955,7 @@ describe('layout.js', () => {
         expect(err1).toBeNull();
         expect(content1).toContain('Child: Parent: Grandparent');
 
-        // Second call should hit cache and validate all files (line 501, 512)
+        // Second call should hit cache and validate all files
         layout.make('inheritance-cache.html', { cache: true }, (err2, content2) => {
           expect(err2).toBeNull();
           expect(content1).toBe(content2);
@@ -924,7 +964,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should trigger exact cache hit path (line 72)', (done) => {
+    test('should return cached content when cache is valid', (done) => {
       const content = '<% block test %>Cache Hit Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'cache-hit.html'), content);
 
@@ -934,7 +974,7 @@ describe('layout.js', () => {
 
         // Ensure cache file exists and is valid
         setTimeout(() => {
-          // Second call should hit cache line 72 (cacheContent !== false)
+          // Second call should hit cache when cacheContent is valid
           layout.make('cache-hit.html', { cache: true }, (err2, content2) => {
             expect(err2).toBeNull();
             expect(content2).toBe(content1); // Should be exact same cached content
@@ -967,22 +1007,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should handle block hide mode specifically', (done) => {
-      const content = `
-        <% block visible %>Visible Content<% /block %>
-        <% block hidden hide %>Hidden Content<% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'hide-mode.html'), content);
 
-      layout.make('hide-mode.html', { cache: false }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Visible Content');
-        expect(content).not.toContain('Hidden Content');
-        done();
-      });
-    });
-
-    test('should test commandUse parameter matching and slot replacement', (done) => {
+    test('should match use command parameters to slot names correctly', (done) => {
       const content = `
         <% block template %>
           <div>
@@ -1005,7 +1031,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should test commandCall with slot content and parameter parsing', (done) => {
+    test('should parse call command parameters and slot content', (done) => {
       const content = `
         <% block template %>
           <div>
@@ -1031,8 +1057,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should test block parsing without p3 parameter', (done) => {
-      // Create a scenario to trigger line 233 - when p3 is falsy
+    test('should parse blocks without parameter attributes', (done) => {
+      // Create blocks without parameter attributes
       // This happens when a block tag has no parameters at all
       const parentContent = `
         <html>
@@ -1055,95 +1081,11 @@ describe('layout.js', () => {
       });
     });
 
-    test('should handle cache locked scenario exactly', (done) => {
-      const content = '<% block test %>Locked Cache Test<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'locked-exact.html'), content);
 
-      // Mock isLocked to return true
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        callback(true); // File is locked
-      };
 
-      layout.make('locked-exact.html', { cache: true }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Locked Cache Test');
 
-        // Restore original
-        require('../lib/lockfile').isLocked = originalIsLocked;
-        done();
-      });
-    });
 
-    test('should trigger hide mode return exactly', (done) => {
-      const parentContent = `
-        <% block sidebar %>Sidebar<% /block %>
-        <% block hidden hide %>This will be hidden<% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'parent.html'), parentContent);
-
-      const childContent = `<% extends parent %>
-<% block sidebar %>Child Sidebar<% /block %>
-<% block hidden hide %>Child Hidden<% /block %>`;
-      fs.writeFileSync(path.join(testDir, 'hide-exact.html'), childContent);
-
-      layout.make('hide-exact.html', { cache: false }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Child Sidebar');
-        expect(content).not.toContain('Child Hidden');
-        expect(content).not.toContain('This will be hidden');
-        done();
-      });
-    });
-
-    test('should test use command exact parameter replacement', (done) => {
-      const content = `
-        <% block reusable %>
-          <h1><% slot title %>Default Title<% /slot %></h1>
-          <p><% slot content %>Default Content<% /slot %></p>
-        <% /block %>
-
-        <% block main %>
-          <% use reusable title="Used Title" content="Used Content" %>
-        <% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'use-exact.html'), content);
-
-      layout.make('use-exact.html', { cache: false, block: 'main' }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Used Title');
-        expect(content).toContain('Used Content');
-        done();
-      });
-    });
-
-    test('should test call command exact slot handling', (done) => {
-      const content = `
-        <% block template %>
-          <section>
-            <% slot header %>Default Header<% /slot %>
-            <% slot %>Default Body<% /slot %>
-          </section>
-        <% /block %>
-
-        <% block main %>
-          <% call template header="Called Header" %>
-            <% slot body %>Called Body<% /slot %>
-            <% slot %>Called Default Slot<% /slot %>
-          <% /call %>
-        <% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'call-exact.html'), content);
-
-      layout.make('call-exact.html', { cache: false, block: 'main' }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Called Header');
-        expect(content).toContain('Called Default Slot');
-        done();
-      });
-    });
-
-    test('should handle unnamed slot in call command (line 398-399)', (done) => {
+    test('should handle unnamed slots in call command', (done) => {
       const content = `
         <% block template %>
           <div><% slot %>Default unnamed<% /slot %></div>
@@ -1166,7 +1108,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should execute commandUse with existing currentBlocks', (done) => {
+    test('should execute use command when blocks already exist', (done) => {
       const parentContent = `
         <% block widget %>
           <div class="widget">
@@ -1189,7 +1131,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should execute commandCall with existing currentBlocks and complex slots', (done) => {
+    test('should execute call command with multiple slots', (done) => {
       const parentContent = `
         <% block component %>
           <article>
@@ -1217,25 +1159,6 @@ describe('layout.js', () => {
       });
     });
 
-    test('should handle cache file locked exactly', (done) => {
-      const content = '<% block test %>Cache Lock Test<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'cache-lock-469.html'), content);
-
-      // Mock lockfile.isLocked to simulate locked state exactly
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        callback(true); // Return locked=true to trigger line 469
-      };
-
-      layout.make('cache-lock-469.html', { cache: true }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Cache Lock Test');
-
-        // Restore original
-        require('../lib/lockfile').isLocked = originalIsLocked;
-        done();
-      });
-    });
 
     test('unnamed slot in call command', (done) => {
       const content = `
@@ -1261,59 +1184,9 @@ describe('layout.js', () => {
       });
     });
 
-    test('should directly trigger commandUse logic', (done) => {
-      const content = `
-        <% block template %>
-          <div class="widget">
-            <h3><% slot title %>Default Title<% /slot %></h3>
-            <div><% slot content %>Default Content<% /slot %></div>
-          </div>
-        <% /block %>
 
-        <% block main %>
-          <% use template title="My Title" content="My Content" %>
-        <% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'use-direct.html'), content);
 
-      layout.make('use-direct.html', { cache: false, block: 'main' }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('My Title');
-        expect(content).toContain('My Content');
-        done();
-      });
-    });
-
-    test('should directly trigger commandCall logic', (done) => {
-      const content = `
-        <% block template %>
-          <article>
-            <h1><% slot title %>Default Title<% /slot %></h1>
-            <p><% slot content %>Default Content<% /slot %></p>
-            <footer><% slot %>Default Footer<% /slot %></footer>
-          </article>
-        <% /block %>
-
-        <% block main %>
-          <% call template title="Call Title" content="Call Content" %>
-            <% slot footer %>Call Footer<% /slot %>
-            <% slot %>Call Default<% /slot %>
-          <% /call %>
-        <% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'call-direct.html'), content);
-
-      layout.make('call-direct.html', { cache: false, block: 'main' }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Call Title');
-        expect(content).toContain('Call Content');
-        expect(content).toContain('Call Footer');
-        expect(content).toContain('Call Default');
-        done();
-      });
-    });
-
-    test('should trigger commandUse parameter parsing in inheritance context', (done) => {
+    test('should parse use command parameters in template inheritance', (done) => {
       const parentContent = `
         <% block reusable %>
           <div class="card">
@@ -1344,7 +1217,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should trigger commandCall with both parameters and slot content', (done) => {
+    test('should handle call command with parameters and slot content', (done) => {
       const parentContent = `
         <% block component %>
           <section class="component">
@@ -1378,42 +1251,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should trigger exact cache locked callback', (done) => {
-      const content = '<% block test %>Lock Test 469<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'lock-469.html'), content);
 
-      // Mock lockfile.isLocked to return true immediately
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-      let callCount = 0;
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        callCount++;
-        if (callCount === 1) {
-          // First call: not locked, to create cache
-          callback(false);
-        }
-        else {
-          // Second call: locked, to trigger line 469
-          callback(true);
-        }
-      };
-
-      // First call to create cache
-      layout.make('lock-469.html', { cache: true }, (err1) => {
-        expect(err1).toBeNull();
-
-        // Second call should trigger line 469
-        layout.make('lock-469.html', { cache: true }, (err2, content2) => {
-          expect(err2).toBeNull();
-          expect(content2).toContain('Lock Test 469');
-
-          // Restore original
-          require('../lib/lockfile').isLocked = originalIsLocked;
-          done();
-        });
-      });
-    });
-
-    test('should trigger commandUse with truly non-existent block', (done) => {
+    test('should handle use command referencing non-existent blocks', (done) => {
       // Create a scenario where use references a block that doesn't exist anywhere
       const parentContent = `
         <% block content %>
@@ -1435,7 +1274,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should trigger commandCall with truly non-existent block', (done) => {
+    test('should handle call command referencing non-existent blocks', (done) => {
       // Create a scenario where call references a block that doesn't exist anywhere
       const parentContent = `
         <% block content %>
@@ -1461,58 +1300,10 @@ describe('layout.js', () => {
       });
     });
 
-    test('should trigger cache locked immediately on getCache', (done) => {
-      // Direct test to trigger line 469 in getCache method
-      const content = '<% block test %>Direct Lock Test<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'direct-lock.html'), content);
 
-      // Mock lockfile.isLocked to always return true (locked)
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        // Always return locked = true to trigger line 469
-        callback(true);
-      };
 
-      layout.make('direct-lock.html', { cache: true }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Direct Lock Test');
-
-        // Restore original
-        require('../lib/lockfile').isLocked = originalIsLocked;
-        done();
-      });
-    });
-
-    test('should trigger line 469 by setting up cache file first', (done) => {
-      const content = '<% block test %>Cache Lock Line 469<% /block %>';
-      const fileName = 'cache-469-test.html';
-      fs.writeFileSync(path.join(testDir, fileName), content);
-
-      // Mock fileExists to return true, then isLocked to return true
-      const originalFileExists = require('../lib/utils').fileExists;
-      const originalIsLocked = require('../lib/lockfile').isLocked;
-
-      require('../lib/utils').fileExists = (filename, callback) => {
-        callback(true); // Cache file exists
-      };
-
-      require('../lib/lockfile').isLocked = (filePath, callback) => {
-        callback(true); // File is locked - should trigger line 469
-      };
-
-      layout.make(fileName, { cache: true }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Cache Lock Line 469');
-
-        // Restore originals
-        require('../lib/utils').fileExists = originalFileExists;
-        require('../lib/lockfile').isLocked = originalIsLocked;
-        done();
-      });
-    });
-
-    test('should cover line 154 parseParent with extension', (done) => {
-      // Test line 154 false branch - parent template with extension
+    test('should parse parent template names with file extensions', (done) => {
+      // Test parseParent with parent template that has file extension
       const parentContent = '<% block content %>Parent With Extension<% /block %>';
       fs.writeFileSync(path.join(testDir, 'parent-with-ext.html'), parentContent);
 
@@ -1527,8 +1318,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should cover line 44 make method default parameter', (done) => {
-      // Test make method default parameter branch (line 44)
+    test('should use default options when options parameter is null', (done) => {
+      // Test make method with null options parameter
       const simpleContent = '<% block test %>Default Param Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'default-param.html'), simpleContent);
 
@@ -1540,7 +1331,7 @@ describe('layout.js', () => {
       });
     });
 
-    test('should cover line 44 make without options parameter', (done) => {
+    test('should use default options when options parameter is undefined', (done) => {
       // Test make method without passing options parameter to trigger default
       const content = '<% block test %>No Options Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'no-options.html'), content);
@@ -1559,8 +1350,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should cover line 365 commandUse with non-existent slot', (done) => {
-      // Test commandUse when slot doesn't exist in blocks (line 365)
+    test('should handle use command with non-existent slot names', (done) => {
+      // Test commandUse when slot doesn't exist in blocks
       const parentContent = `
         <% block template %>
           <div>
@@ -1591,8 +1382,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should cover line 402 commandCall with non-existent slot', (done) => {
-      // Test commandCall when slot doesn't exist in blocks (line 402)
+    test('should handle call command with non-existent slot names', (done) => {
+      // Test commandCall when slot doesn't exist in blocks
       const parentContent = `
         <% block template %>
           <div>
@@ -1625,8 +1416,8 @@ describe('layout.js', () => {
       });
     });
 
-    test('should cover line 496 getCache with undefined files', (done) => {
-      // Test getCache when info.files is undefined (line 496)
+    test('should handle cache with missing files property', (done) => {
+      // Test getCache when info.files is undefined
       const content = '<% block test %>Cache Files Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'cache-no-files.html'), content);
 
