@@ -1,7 +1,7 @@
 {
   "name": "cb-template",
   "version": "2.0.0",
-  "description": "唱吧模板引擎",
+  "description": "Changba Template Engine",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [

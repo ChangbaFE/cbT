@@ -11,24 +11,24 @@ describe('layout.js', () => {
   let layout;
 
   beforeEach(() => {
-    // 创建临时测试目录
+    // Create temporary test directory
     testDir = path.join(os.tmpdir(), 'cbt-layout-test-' + Date.now() + '-' + Math.random());
     fs.mkdirSync(testDir, { recursive: true });
 
-    // 创建Layout实例
+    // Create Layout instance
     const coreInstance = cbT.getInstance();
     coreInstance.basePath = testDir;
     layout = new Layout(coreInstance);
   });
 
   afterEach(() => {
-    // 清理测试目录
+    // Clean up test directory
     fs.rmSync(testDir, { recursive: true, force: true });
   });
 
   describe('template inheritance', () => {
     test('should handle simple template extension', (done) => {
-      // 创建父模板
+      // Create parent template
       const parentContent = `
         <!DOCTYPE html>
         <html>
@@ -42,7 +42,7 @@ describe('layout.js', () => {
       `;
       fs.writeFileSync(path.join(testDir, 'parent.html'), parentContent);
 
-      // 创建子模板
+      // Create child template
       const childContent = `<% extends parent %>
 <% block title %>Child Title<% /block %>
 <% block content %>Child Content<% /block %>
@@ -52,7 +52,7 @@ describe('layout.js', () => {
       layout.make('child.html', { cache: false }, (err, content) => {
         expect(err).toBeNull();
 
-        // 编译并渲染模板
+        // Compile and render template
         const template = layout.core._buildTemplateFunction(content);
         const result = template({});
 
@@ -154,7 +154,7 @@ describe('layout.js', () => {
     });
 
     test('should handle multiple levels of inheritance', (done) => {
-      // 祖父模板
+      // Grandparent template
       const grandparentContent = `
         <html>
         <% block header %><header>Grand<% /block %>
@@ -164,14 +164,14 @@ describe('layout.js', () => {
       `;
       fs.writeFileSync(path.join(testDir, 'grandparent.html'), grandparentContent);
 
-      // 父模板
+      // Parent template
       const parentContent = `<% extends grandparent %>
 <% block header %><header>Parent<% /block %>
 <% block content %>Parent Content<% /block %>
       `;
       fs.writeFileSync(path.join(testDir, 'parent.html'), parentContent);
 
-      // 子模板
+      // Child template
       const childContent = `<% extends parent %>
 <% block content %>Child Content<% /block %>
       `;
@@ -206,7 +206,7 @@ describe('layout.js', () => {
     });
 
     test('should detect circular inheritance', (done) => {
-      // 创建循环继承: template1 extends template2, template2 extends template1
+      // Create circular inheritance: template1 extends template2, template2 extends template1
       const template1 = `<% extends template2 %>
 <% block content %>Template1<% /block %>
       `;
@@ -226,7 +226,7 @@ describe('layout.js', () => {
     });
 
     test('should detect complex circular inheritance chain', (done) => {
-      // 创建复杂循环: A -> B -> C -> A
+      // Create complex loop: A -> B -> C -> A
       const templateA = `<% extends templateB %>
 <% block content %>A<% /block %>`;
       fs.writeFileSync(path.join(testDir, 'templateA.html'), templateA);
@@ -253,14 +253,14 @@ describe('layout.js', () => {
       const content = '<% block test %>Test<% /block %>';
       fs.writeFileSync(path.join(testDir, 'cached.html'), content);
 
-      // 第一次编译
+      // First compilation
       layout.make('cached.html', { cache: true }, (err1, content1) => {
         expect(err1).toBeNull();
 
-        // 不修改文件，直接第二次编译（应该使用缓存）
+        // Don't modify file, compile directly second time (should use cache)
         layout.make('cached.html', { cache: true }, (err2, content2) => {
           expect(err2).toBeNull();
-          expect(content1).toBe(content2); // 应该相同因为使用了缓存
+          expect(content1).toBe(content2); // Should be the same because cache was used
           done();
         });
       });
@@ -271,19 +271,19 @@ describe('layout.js', () => {
       const filePath = path.join(testDir, 'cached2.html');
       fs.writeFileSync(filePath, content);
 
-      // 第一次编译
+      // First compilation
       layout.make('cached2.html', { cache: true }, (err1, content1) => {
         expect(err1).toBeNull();
 
-        // 等待一秒确保文件时间戳不同
+        // Wait one second to ensure file timestamp is different
         setTimeout(() => {
-          // 修改文件
+          // Modify file
           fs.writeFileSync(filePath, '<% block test %>Modified<% /block %>');
 
-          // 第二次编译
+          // Second compilation
           layout.make('cached2.html', { cache: true }, (err2, content2) => {
             expect(err2).toBeNull();
-            // 内容应该不同因为文件被修改了
+            // Content should be different because file was modified
             expect(content1).not.toBe(content2);
             done();
           });

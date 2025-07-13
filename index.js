@@ -17,14 +17,14 @@ const FOREACH_INDEX = 'Index';
 
 const core = {
 
-  //标记当前版本
+  // Mark current version
   version: VERSION,
 
-  //自定义分隔符，可以含有正则中的字符，可以是HTML注释开头 <! !>
+  // Custom delimiters, can contain regex metacharacters, can be HTML comment tags <! !>
   leftDelimiter: '<%',
   rightDelimiter: '%>',
 
-  //自定义默认是否转义，默认为自动转义
+  // Custom default escaping behavior, defaults to auto-escape
   escape: true,
 
   basePath: '',
@@ -32,19 +32,19 @@ const core = {
 
   defaultExtName: '.html',
 
-  //编译模板
+  // Compile template
   compile(str) {
-    // 返回模板函数
+    // Return template function
     return this._buildTemplateFunction(this._parse(str));
   },
 
-  // 渲染模板函数
+  // Render template function
   render(str, data, subTemplate) {
-    // 返回渲染后的内容
+    // Return rendered content
     return this.compile(str)(data, subTemplate);
   },
 
-  // 编译模板文件，支持模板继承
+  // Compile template file with inheritance support
   compileFile(filename, options = {}, callback) {
     // Handle parameter overloading: check actual number of arguments
     if (arguments.length === 2) {
@@ -55,12 +55,12 @@ const core = {
     const instance = new Layout(this);
 
     instance.make(filename, options, (err, content) => {
-      // 返回模板函数
+      // Return template function
       callback(err, this._buildTemplateFunction(content));
     });
   },
 
-  // 渲染模板文件，支持模板继承
+  // Render template file with inheritance support
   renderFile(filename, data, options = {}, callback) {
     // Handle parameter overloading: check actual number of arguments
     if (arguments.length === 3) {
@@ -69,7 +69,7 @@ const core = {
     }
 
     this.compileFile(filename, options, (err, func) => {
-      // 返回渲染后的内容
+      // Return rendered content
       callback(err, func(data));
     });
   },
@@ -94,7 +94,7 @@ const core = {
       return ${TEMPLATE_OUT};
     `;
 
-    // 删除无效指令
+    // Remove invalid directives
     funcBody = funcBody.replace(new RegExp(`${TEMPLATE_OUT}\\s*\\+?=\\s*'';`, 'g'), '');
 
     // console.log(funcBody.replace(/\\n/g, '\n'));
@@ -104,32 +104,32 @@ const core = {
     return (templateObject, subTemplate) => func(helpers, templateObject, subTemplate);
   },
 
-  //解析模板字符串
+  // Parse template string
   _parse(str) {
 
-    //取得分隔符
+    // Get delimiters
     const _left_ = this.leftDelimiter;
     const _right_ = this.rightDelimiter;
 
-    //对分隔符进行转义，支持正则中的元字符，可以是HTML注释 <!  !>
+    // Escape delimiters, support regex metacharacters, can be HTML comments <!  !>
     const _left = utils.encodeReg(_left_);
     const _right = utils.encodeReg(_right_);
 
     str = String(str)
 
-      //去掉分隔符中js注释
+      // Remove JS comments within delimiters
       .replace(new RegExp("(" + _left + "[^" + _right + "]*)//.*\n", "g"), "$1")
 
-      //默认支持HTML注释，将HTML注释匹配掉的原因是用户有可能用 <! !>来做分割符
+      // Default support for HTML comments, removing them because users might use <! !> as delimiters
       //.replace(/<!--[\s\S]*?-->/g, '')
-      //去掉注释内容  <%* 这里可以任意的注释 *%>
+      // Remove comment content  <%* arbitrary comments here *%>
       .replace(new RegExp(_left + '\\*[\\s\\S]*?\\*' + _right, 'gm'), '')
 
-      //用来处理非分隔符内部的内容中含有 斜杠 \ 单引号 '
+      // Handle content outside delimiters containing backslashes \ and single quotes '
       .replace(new RegExp(_left + "(?:(?!" + _right + ")[\\s\\S])*" + _right + "|((?:(?!" + _left + ")[\\s\\S])+)", "g"), (item, $1) => {
         let str = '';
         if ($1) {
-          //将 斜杠 单引 转义
+          // Escape backslashes and single quotes
           str = $1.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         }
         else {
@@ -139,125 +139,125 @@ const core = {
         return str;
       })
 
-      //把所有换行去掉  \r回车符 \t制表符 \n换行符
+      // Remove all line breaks  \r carriage return \t tab \n newline
       .replace(/\r/g, '\\r')
       .replace(/\t/g, '\\t')
       .replace(/\n/g, '\\n');
 
 
     str = str
-      //定义变量，如果没有分号，需要容错  <%let val='test'%>
+      // Define variables, add semicolon if missing for error tolerance  <%let val='test'%>
       .replace(new RegExp("(" + _left + "\\s*?let\\s*?.+?\\s*?[^;])\\s*?" + _right, "g"),
         `$1;${_right_}`)
 
-      //对变量后面的分号做容错(包括转义模式 如<%:h=value%>)  <%=value;%> 排除掉函数的情况 <%fun1();%> 排除定义变量情况  <%var val='test';%>
+      // Handle trailing semicolons for variables (including escape modes like <%:h=value%>)  <%=value;%> exclude function calls <%fun1();%> exclude variable definitions  <%var val='test';%>
       .replace(new RegExp("(" + _left + ":?[hvu]?\\s*?=\\s*?[^;|" + _right + "]*?);\\s*?" + _right, "g"),
         `$1${_right_}`)
 
-      // foreach循环  <% foreach (x in arr) %>
+      // foreach loop  <% foreach (x in arr) %>
       .replace(new RegExp(_left + "\\s*?foreach\\s*?\\((.+?)\\s+in\\s+(.+?)\\)\\s*?" + _right, "g"),
         `${_left_}if/*-*/(typeof($2)!=='undefined'&&(Array.isArray($2)&&$2.length>0||${TEMPLATE_HELPER}.isObject($2)&&!${TEMPLATE_HELPER}.isEmptyObject($2))){${TEMPLATE_HELPER}.each($2,($1${FOREACH_INDEX},$1)=>{${_right_}`)
 
-      // foreachelse指令  <% foreachelse %>
+      // foreachelse directive  <% foreachelse %>
       .replace(new RegExp(_left + "\\s*?foreachelse\\s*?" + _right, "g"),
         `${_left_}})}else{${TEMPLATE_HELPER}.run(()=>{${_right_}`)
 
-      // foreachbreak指令  <% foreachbreak %>
+      // foreachbreak directive  <% foreachbreak %>
       .replace(new RegExp(_left + "\\s*?foreachbreak\\s*?" + _right, "g"),
         `${_left_}return false;${_right_}`)
 
-      // foreach循环结束  <% /foreach %>
+      // foreach loop end  <% /foreach %>
       .replace(new RegExp(_left + "\\s*?/foreach\\s*?" + _right, "g"),
         `${_left_}})}${_right_}`)
 
-      // if 指令 <% if (x == 1) %>
+      // if directive <% if (x == 1) %>
       .replace(new RegExp(_left + "\\s*?if\\s*?\\((.+?)\\)\\s*?" + _right, "g"),
         `${_left_}if($1){${_right_}`)
 
-      // elseif 指令 <% elseif (x == 1) %>
+      // elseif directive <% elseif (x == 1) %>
       .replace(new RegExp(_left + "\\s*?else\\s*?if\\s*?\\((.+?)\\)\\s*?" + _right, "g"),
         `${_left_}}else if($1){${_right_}`)
 
-      // else 指令 <% else %>
+      // else directive <% else %>
       .replace(new RegExp(_left + "\\s*?else\\s*?" + _right, "g"),
         `${_left_}}else{${_right_}`)
 
-      // if 指令结束 <% /if %>
+      // if directive end <% /if %>
       .replace(new RegExp(_left + "\\s*?/if\\s*?" + _right, "g"),
         `${_left_}}${_right_}`)
 
-    // 注意：必须在原生指令编译完毕再编译其他指令
+    // Note: must compile other directives after native directives are compiled
 
-      // 定义子模板 <% define value(param) %>
+      // Define sub-template <% define value(param) %>
       .replace(new RegExp(_left + "\\s*?define\\s+?([a-z0-9_$]+?)\\s*?\\((.*?)\\)\\s*?" + _right, "g"),
         `${_left_}${TEMPLATE_SUB}['$1']=($2)=>{${_right_}`)
 
-      // 在最后子模板结束的位置增加直接调用子模板的代码！
+      // Add direct sub-template invocation code at the end of the last sub-template!
       .replace(new RegExp(_left + "\\s*?/define\\s*?(?![\\s\\S]*\\s*?/define\\s*?)" + _right, "g"),
         `${_left_} /define ${_right_}${_left_}if(${SUB_TEMPLATE}){${TEMPLATE_OUT}='';if(${TEMPLATE_SUB}[${SUB_TEMPLATE}]){${TEMPLATE_SUB}[${SUB_TEMPLATE}](value)}${TEMPLATE_VAR_NAME}=null;return}${_right_}`)
 
-      // 定义子模板结束 <% /define %>
+      // Define sub-template end <% /define %>
       .replace(new RegExp(_left + "\\s*?/define\\s*?" + _right, "g"),
         `${_left_}};${_right_}`)
 
-      // 调用子模板 <% run value() %>
+      // Call sub-template <% run value() %>
       .replace(new RegExp(_left + "\\s*?run\\s+?([a-zA-Z0-9_$]+?)\\s*?\\((.*?)\\)\\s*?" + _right, "g"),
         `${_left_}if(${TEMPLATE_SUB}['$1']){${TEMPLATE_SUB}['$1']($2)}${_right_}`)
 
 
-      //按照 <% 分割为一个个数组，再用 \t 和在一起，相当于将 <% 替换为 \t
-      //将模板按照<%分为一段一段的，再在每段的结尾加入 \t,即用 \t 将每个模板片段前面分隔开
+      // Split by <% into arrays, then join with \t, equivalent to replacing <% with \t
+      // Split template by <% into segments, add \t at the end of each segment, i.e., use \t to separate each template fragment
       .split(_left_).join("\t");
 
-    //支持用户配置默认是否自动转义
+    // Support user configuration for default auto-escaping
     if (this.escape) {
       str = str
 
-        //找到 \t=任意一个字符%> 替换为 '，任意字符,'
-        //即替换简单变量  \t=data%> 替换为 ',data,'
-        //默认HTML转义  也支持HTML转义写法<%:h=value%>
+        // Find \t=any character%> replace with ',any character,'
+        // Replace simple variables  \t=data%> replace with ',data,'
+        // Default HTML escaping  also supports HTML escape syntax <%:h=value%>
         .replace(new RegExp("\\t=(.*?)" + _right, "g"),
           `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1))+'`);
     }
     else {
       str = str
 
-        //默认不转义HTML转义
+        // Default no HTML escaping
         .replace(new RegExp("\\t=(.*?)" + _right, "g"),
           `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':$1)+'`);
     };
 
     str = str
 
-      //支持HTML转义写法<%:h=value%>
+      // Support HTML escape syntax <%:h=value%>
       .replace(new RegExp("\\t:h=(.*?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1))+'`)
 
-      //支持不转义写法 <%:=value%>和<%-value%>
+      // Support non-escape syntax <%:=value%> and <%-value%>
       .replace(new RegExp("\\t(?::=|-)(.*?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':$1)+'`)
 
-      //支持url转义 <%:u=value%>
+      // Support URL escaping <%:u=value%>
       .replace(new RegExp("\\t:u=(.*?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':encodeURIComponent($1))+'`)
 
-      //支持UI 变量使用在HTML页面标签onclick等事件函数参数中  <%:v=value%>
+      // Support UI variables in HTML tag event function parameters like onclick  <%:v=value%>
       .replace(new RegExp("\\t:v=(.*?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeEventHTML($1))+'`)
 
-      //支持迭代数组  <%:a=value|分隔符%>
+      // Support array iteration  <%:a=value|separator%>
       .replace(new RegExp("\\t:a=(.+?)(?:\\|(.*?))?" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.forEachArray($1,'$2'))+'`)
 
-      //支持格式化钱数  <%:m=value%>
+      // Support money formatting  <%:m=value%>
       .replace(new RegExp("\\t:m=(.+?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null)||isNaN($1))?'':Number(Math.round(($1)*100)/100).toFixed(2))+'`)
 
-      //字符串截取补... <%:s=value|位数%>
+      // String truncation with ellipsis <%:s=value|length%>
       .replace(new RegExp("\\t:s=(.+?)\\|(\\d+?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML($1.length>$2?$1.substr(0,$2)+'...':$1))+'`)
 
-      //HTTP协议自适应 <%:p=value%>
+      // HTTP protocol auto-adaptation <%:p=value%>
       .replace(new RegExp("\\t:p=(.+?)" + _right, "g"),
         `'+((typeof($1)==='undefined'||(typeof($1)==='object'&&$1===null))?'':${TEMPLATE_HELPER}.encodeHTML(${TEMPLATE_HELPER}.replaceUrlProtocol($1)))+'`)
 
@@ -270,11 +270,11 @@ const core = {
         `'+($1)+'`)
 
 
-      // 将字符串按照 \t 分成为数组，在用'; 将其合并，即替换掉结尾的 \t 为 ';
+      // Split string by \t into arrays, then join with '; to replace trailing \t with ';'
       .split("\t").join("';")
 
-      // 将 %> 替换为 ${TEMPLATE_OUT}+='
-      // 即去掉结尾符，生成字符串拼接
+      // Replace %> with ${TEMPLATE_OUT}+='
+      // Remove closing delimiter and generate string concatenation
       .split(_right_).join(`${TEMPLATE_OUT}+='`);
 
     // console.log(str);

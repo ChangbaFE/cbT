@@ -2,15 +2,17 @@
 
 [![npm version](https://badgen.net/npm/v/cb-template)](https://www.npmjs.com/package/cb-template) [![Downloads](https://badgen.net/npm/dt/cb-template)](https://www.npmjs.com/package/cb-template) [![codecov](https://codecov.io/github/hex-ci/cbT/graph/badge.svg?token=HBHJLIG91R)](https://codecov.io/github/hex-ci/cbT)
 
-一个支持模板多级继承的 Node.js 服务端模板引擎
+A Node.js server-side template engine that supports multi-level template inheritance
 
-## 目录
+\[ English | [中文](README_zh.md) \]
 
-  * [安装](#安装)
-  * [特性](#特性)
-  * [实例](#实例)
-  * [使用](#使用)
-  * [选项](#选项)
+## Table of Contents
+
+  * [Installation](#installation)
+  * [Features](#features)
+  * [Example](#example)
+  * [Usage](#usage)
+  * [Options](#options)
      * [cbT.leftDelimiter](#cbtleftdelimiter)
      * [cbT.rightDelimiter](#cbtrightdelimiter)
      * [cbT.basePath](#cbtbasepath)
@@ -22,46 +24,46 @@
      * [cbT.render(str, data)](#cbtrenderstr-data)
      * [cbT.renderFile(filename, data, options, callback)](#cbtrenderfilefilename-data-options-callback)
      * [cbT.getInstance()](#cbtgetinstance)
-  * [模板语法](#模板语法)
-     * [模板继承（Layout）](#模板继承layout)
-        * [extends 标签](#extends-标签)
-        * [block 标签](#block-标签)
-        * [parent 标签](#parent-标签)
-        * [child 标签](#child-标签)
-        * [slot 标签](#slot-标签)
-        * [call 标签](#call-标签)
-        * [use 标签](#use-标签)
-        * [实例](#实例-1)
-     * [其他语法](#其他语法)
-        * [转义后输出变量内容](#转义后输出变量内容)
-        * [不转义输出变量内容](#不转义输出变量内容)
-        * [URL 转义输出变量内容](#url-转义输出变量内容)
-        * [转义 HTML 属性值后输出变量内容](#转义-html-属性值后输出变量内容)
-        * [转义输出数组](#转义输出数组)
-        * [格式化钱数](#格式化钱数)
-        * [内容截取](#内容截取)
-        * [URL 协议自适应](#url-协议自适应)
-        * [转义输出函数返回值](#转义输出函数返回值)
-        * [不转义输出函数返回值](#不转义输出函数返回值)
-        * [定义变量](#定义变量)
-        * [遍历数组](#遍历数组)
-        * [条件输出](#条件输出)
-        * [定义子模板](#定义子模板)
-        * [调用子模板](#调用子模板)
+  * [Template Syntax](#template-syntax)
+     * [Template Inheritance (Layout)](#template-inheritance-layout)
+        * [extends tag](#extends-tag)
+        * [block tag](#block-tag)
+        * [parent tag](#parent-tag)
+        * [child tag](#child-tag)
+        * [slot tag](#slot-tag)
+        * [call tag](#call-tag)
+        * [use tag](#use-tag)
+        * [Example](#example-1)
+     * [Other Syntax](#other-syntax)
+        * [Escaped variable output](#escaped-variable-output)
+        * [Unescaped variable output](#unescaped-variable-output)
+        * [URL-escaped variable output](#url-escaped-variable-output)
+        * [HTML attribute escaped variable output](#html-attribute-escaped-variable-output)
+        * [Escaped array output](#escaped-array-output)
+        * [Money formatting](#money-formatting)
+        * [Content truncation](#content-truncation)
+        * [URL protocol adaptation](#url-protocol-adaptation)
+        * [Escaped function return value output](#escaped-function-return-value-output)
+        * [Unescaped function return value output](#unescaped-function-return-value-output)
+        * [Variable definition](#variable-definition)
+        * [Array iteration](#array-iteration)
+        * [Conditional output](#conditional-output)
+        * [Sub-template definition](#sub-template-definition)
+        * [Sub-template invocation](#sub-template-invocation)
 
-## 安装
+## Installation
 
 ```bash
 $ npm install cb-template
 ```
 
-## 特性
+## Features
 
-* 支持模板继承（Layout）
-* 模块化模板
-* 灵活的模板语法
+* Supports template inheritance (Layout)
+* Modular templates
+* Flexible template syntax
 
-## 实例
+## Example
 
 ```html
 <% if (user) %>
@@ -69,541 +71,541 @@ $ npm install cb-template
 <% /if %>
 ```
 
-## 使用
+## Usage
 
 ```javascript
 const cbT = require('cb-template');
 
 const template = cbT.compile(str);
 template(data);
-// => 已渲染的 HTML 字符串
+// => Rendered HTML string
 
 cbT.render(str, data);
-// => 已渲染的 HTML 字符串
+// => Rendered HTML string
 
-// 支持模板继承
+// Supports template inheritance
 cbT.renderFile(filename, data, options, (err, data) => {
   if (!err) {
-    // => data 是已渲染的 HTML 字符串
+    // => data is rendered HTML string
   }
 });
 ```
 
-## 选项
+## Options
 
 ### cbT.leftDelimiter
 
-定义左分隔符，默认值：`<%`
+Defines the left delimiter, default value: `<%`
 
 ### cbT.rightDelimiter
 
-定义右分隔符，默认值：`%>`
+Defines the right delimiter, default value: `%>`
 
 ### cbT.basePath
 
-定义读取模板文件的根目录，默认值为空字符串。
+Defines the root directory for reading template files, default value is an empty string.
 
-例如你想以 `/my/template` 为所有模板的根目录，则设置 `cbT.basePath = '/my/template'`
+For example, if you want to use `/my/template` as the root directory for all templates, set `cbT.basePath = '/my/template'`
 
 ### cbT.cachePath
 
-模板缓存目录，默认值为系统临时目录。
+Template cache directory, default value is the system temporary directory.
 
 ### cbT.defaultExtName
 
-模板文件默认扩展名，默认值为 `.html`
+Default extension for template files, default value is `.html`
 
 ## API
 
 ### cbT.compile(str)
 
-编译模板字符串，返回模板函数，不支持模板继承。
+Compiles a template string and returns a template function. Does not support template inheritance.
 
-参数：
+Parameters:
 
-* str: 字符串，输入的模板内容
+* str: String, input template content
 
-返回值：
+Return value:
 
-类型：函数，模板函数，用于后续直接渲染模板。
+Type: Function, template function for subsequent direct template rendering.
 
-模板函数参数：
+Template function parameters:
 
-* data: 对象，输入的数据
+* data: Object, input data
 
-例子：
+Example:
 
 ```javascript
 const template = cbT.compile(`<title><%=title%></title><p><%=nickname%></p>`);
-template({ title: '标题', nickname: '昵称' });
-// => 已渲染的 HTML 字符串
+template({ title: 'Title', nickname: 'Nickname' });
+// => Rendered HTML string
 ```
 
 ### cbT.compileFile(filename, options, callback)
 
-读取模板文件，返回模板函数，支持模板继承。
+Reads a template file and returns a template function. Supports template inheritance.
 
-参数：
+Parameters:
 
-* filename: 字符串，模板文件路径，如果设置了 cbT.basePath 则 basePath 为根目录，建议使用绝对路径。
-* options: 对象，编译参数。
-  * cache: 布尔，是否开启编译缓存，默认开启
-* callback: 函数，回调函数，编译完成后回调。
-  * 回调函数参数: err: 是否有错误；template: 模板函数
+* filename: String, template file path. If cbT.basePath is set, basePath is used as the root directory. Absolute paths are recommended.
+* options: Object, compilation parameters.
+  * cache: Boolean, whether to enable compilation cache, default is enabled
+* callback: Function, callback function executed after compilation.
+  * Callback function parameters: err: whether there is an error; template: template function
 
-例子：
+Example:
 
 ```javascript
 cbT.compileFile('/your/path/filename.html', {}, (err, template) => {
-  template({ title: '标题', nickname: '昵称' });
-  // => 已渲染的 HTML 字符串
+  template({ title: 'Title', nickname: 'Nickname' });
+  // => Rendered HTML string
 });
 ```
 
 ### cbT.render(str, data)
 
-编译模板字符串，并返回渲染后的结果，不支持模板继承。
+Compiles a template string and returns the rendered result. Does not support template inheritance.
 
-参数：
+Parameters:
 
-* str: 字符串，输入的模板内容
-* data: 对象，用于渲染的数据，对象的 key 会自动转换为模板中的变量名
+* str: String, input template content
+* data: Object, data for rendering. Object keys are automatically converted to variable names in the template
 
-返回值：
+Return value:
 
-类型：字符串，已渲染的字符串
+Type: String, rendered string
 
-例子：
+Example:
 
 ```javascript
-cbT.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标题', nickname: '昵称' });
-// => 已渲染的 HTML 字符串
+cbT.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: 'Title', nickname: 'Nickname' });
+// => Rendered HTML string
 ```
 
 ### cbT.renderFile(filename, data, options, callback)
 
-读取模板文件，并返回渲染后的结果，支持模板继承。
+Reads a template file and returns the rendered result. Supports template inheritance.
 
-参数：
+Parameters:
 
-* filename: 字符串，模板文件路径，如果设置了 cbT.basePath 则 basePath 为根目录，建议使用绝对路径。
-* data: 对象，用于渲染的数据，对象的 key 会自动转换为模板中的变量名
-* options: 对象，编译参数。
-  * cache: 布尔，是否开启编译缓存，默认开启
-  * cacheName: 字符串，设置缓存名称，默认值 `changba-template-cache`，如果设置过 `cbT.cachePath` 则此值无效
-* callback: 函数，回调函数，编译完成后回调。
-  * 回调函数参数: err: 是否有错误；content: 渲染后的结果
+* filename: String, template file path. If cbT.basePath is set, basePath is used as the root directory. Absolute paths are recommended.
+* data: Object, data for rendering. Object keys are automatically converted to variable names in the template
+* options: Object, compilation parameters.
+  * cache: Boolean, whether to enable compilation cache, default is enabled
+  * cacheName: String, set cache name, default value `changba-template-cache`. This value is invalid if `cbT.cachePath` is set
+* callback: Function, callback function executed after compilation.
+  * Callback function parameters: err: whether there is an error; content: rendered result
 
-例子：
+Example:
 
 ```javascript
-cbT.renderFile('/your/path/filename.html', { title: '标题', nickname: '昵称' }, {}, (err, content) => {
+cbT.renderFile('/your/path/filename.html', { title: 'Title', nickname: 'Nickname' }, {}, (err, content) => {
   console.log(content);
-  // => 已渲染的 HTML 字符串
+  // => Rendered HTML string
 });
 ```
 
 ### cbT.getInstance()
 
-获取模板引擎的一个新实例，一般用于单独设置模板引擎的某个选项，比如单独设置左右分隔符。
+Gets a new instance of the template engine. Generally used to set individual options of the template engine, such as setting left and right delimiters separately.
 
-例子：
+Example:
 
 ```javascript
 const myInstance = cbT.getInstance();
-myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标题', nickname: '昵称' });
-// => 已渲染的 HTML 字符串
+myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: 'Title', nickname: 'Nickname' });
+// => Rendered HTML string
 ```
 
-注意：获取的新实例不能进行 getInstance() 操作，只能从 cbT 中 getInstance()
+Note: The new instance cannot perform getInstance() operations. You can only getInstance() from cbT.
 
-## 模板语法
+## Template Syntax
 
-模板默认分隔符为 `<% %>`，例如：`<% block %>`
+The default template delimiters are `<% %>`, for example: `<% block %>`
 
-### 模板继承（Layout）
+### Template Inheritance (Layout)
 
-#### extends 标签
-
-```
-<% extends 模板路径 %>
-```
-
-例如 `<% extends /welcome/test %>`
-
-这里指的是从 `basePath/welcome/test.html` 这个模板继承。
-
-注意：`extends` 标签必须在模板文件首行首字母位置。另外这个标签不需要结束标签。
-
-#### block 标签
+#### extends tag
 
 ```
-<% block 名称 %>
-  内容...
+<% extends template_path %>
+```
+
+For example `<% extends /welcome/test %>`
+
+This refers to inheriting from the template `basePath/welcome/test.html`.
+
+Note: The `extends` tag must be at the first character position of the first line of the template file. Also, this tag does not need a closing tag.
+
+#### block tag
+
+```
+<% block name %>
+  content...
 <% /block %>
 ```
 
-在父模板中使用 block 代表定义一个名为“名称”的 block。
+Using block in a parent template means defining a block named "name".
 
-在子模板中使用 block 代表替换父模板中同名的 block。
+Using block in a child template means replacing the block with the same name in the parent template.
 
 ```
-<% block 名称 hide %>
-  内容...
+<% block name hide %>
+  content...
 <% /block %>
 ```
 
-`hide` 属性表示在子模板中隐藏父模板中同名的 block。
+The `hide` attribute means hiding the block with the same name in the parent template in the child template.
 
-#### parent 标签
+#### parent tag
 
 ```
-<% block 名称 %>
+<% block name %>
   <% parent %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
-`parent` 标签只能在 `block` 标签中使用，功能是把父模板相同 block 名称的内容放到当前 block 中 parent 所在位置。
+The `parent` tag can only be used within `block` tags. Its function is to place the content of the parent template's block with the same name at the position where `parent` is located in the current block.
 
-#### child 标签
+#### child tag
 
 ```
-<% block 名称 %>
+<% block name %>
   <% child %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
-`child` 标签只能在 `block` 标签中使用，功能是把子模板相同 block 名称的内容放到当前 block 中 child 所在位置。
+The `child` tag can only be used within `block` tags. Its function is to place the content of the child template's block with the same name at the position where `child` is located in the current block.
 
-#### slot 标签
+#### slot tag
 
 ```
-<% block 名称 %>
-  <% slot 插槽名称 %>
-    内容
+<% block name %>
+  <% slot slot_name %>
+    content
   <% /slot %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
-`slot` 标签只能在 `block` 标签中使用。
+`slot` tag can only be used within `block` tags.
 
-`slot` 标签是用于在父模板中定义一些插槽位置，子模板会替换父模板相同插槽名称所在位置的内容。
+The `slot` tag is used to define slot positions in parent templates. Child templates will replace the content at the same slot name position in the parent template.
 
-#### call 标签
+#### call tag
 
 ```
-<% block 名称 %>
-  <% call 其它block名称 %>
-    <% slot 插槽名称 %>
-      内容
+<% block name %>
+  <% call other_block_name %>
+    <% slot slot_name %>
+      content
     <% /slot %>
   <% /call %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
 ```
-<% block 名称 %>
-  <% call 其它block名称 slot1="插槽内容1" slot2="插槽内容2" %>
-    <% slot 插槽3 %>
-      插槽内容3
+<% block name %>
+  <% call other_block_name slot1="slot_content_1" slot2="slot_content_2" %>
+    <% slot slot3 %>
+      slot_content_3
     <% /slot %>
   <% /call %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
-`call` 用于把当前文件其它 block 名称（支持所有父模板）的内容，替换 call 所在位置的内容。其中 `slot` 的意义与上节一样，会替换相应的内容。
+`call` is used to replace the content at the call position with the content of other block names in the current file (supports all parent templates). The meaning of `slot` is the same as in the previous section, it will replace the corresponding content.
 
-#### use 标签
+#### use tag
 
 ```
-<% block 名称 %>
-  <% use 其它block名称 slot1="插槽内容1" slot2="插槽内容2" %>
+<% block name %>
+  <% use other_block_name slot1="slot_content_1" slot2="slot_content_2" %>
 
-  内容...
+  content...
 <% /block %>
 ```
 
-`use` 是简化版的 `call`。
+`use` is a simplified version of `call`.
 
-#### 实例
+#### Example
 
-父模板 parent.html：
+Parent template parent.html:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Welcome to <% block title %>测试标题<% /block %></title>
+  <title>Welcome to <% block title %>Test Title<% /block %></title>
 </head>
 <body>
-  <h1>Welcome to <% block name %>测试内容<% /block %>!</h1>
+  <h1>Welcome to <% block name %>Test Content<% /block %>!</h1>
   <p>
     <% block test-1 %>
-      测试内容-1
+      Test Content-1
     <% /block %>
   </p>
 
   <p>
     <% block test-2 %>
       <small><% child %></small>
-      测试内容-2
+      Test Content-2
     <% /block %>
   </p>
 </body>
 </html>
 ```
 
-子模板 welcome.html：
+Child template welcome.html:
 
 ```html
 <% extends parent %>
 
-<% block title %>子模板标题<% /block %>
+<% block title %>Child Template Title<% /block %>
 
-<% block name %><strong>子模板内容</strong><% /block %>
+<% block name %><strong>Child Template Content</strong><% /block %>
 
 <% block test-1 %>
   <% parent %>
-  <strong>子模板内容-1</strong>
+  <strong>Child Template Content-1</strong>
 <% /block %>
 
 <% block test-2 %>
-  子模板内容-2
+  Child Template Content-2
 <% /block %>
 ```
 
-最终渲染成：
+Final rendered result:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Welcome to 子模板标题</title>
+  <title>Welcome to Child Template Title</title>
 </head>
 <body>
-  <h1>Welcome to <strong>子模板内容</strong>!</h1>
+  <h1>Welcome to <strong>Child Template Content</strong>!</h1>
   <p>
-    测试内容-1
-    <strong>子模板内容-1</strong>
+    Test Content-1
+    <strong>Child Template Content-1</strong>
   </p>
 
   <p>
-    <small>子模板内容-2</small>
-    测试内容-2
+    <small>Child Template Content-2</small>
+    Test Content-2
   </p>
 </body>
 </html>
 ```
 
-### 其他语法
+### Other Syntax
 
-#### 转义后输出变量内容
+#### Escaped variable output
 
-进行 HTML 转义后输出变量内容，可确保没有 XSS 安全问题。
+Outputs variable content after HTML escaping, ensuring no XSS security issues.
 
-基本用法：`<%=变量%>`
+Basic usage: `<%=variable%>`
 
-例子：
+Example:
 
 ```html
 <title><%=title%></title>
 <p><%=nickname%></p>
 ```
 
-#### 不转义输出变量内容
+#### Unescaped variable output
 
-原样输出变量内容，除非你知道自己在做什么，否则不要使用，会有 XSS 安全问题。
+Outputs variable content as-is. Do not use unless you know what you're doing, as it may cause XSS security issues.
 
-基本用法：`<%:=变量%>` 或 `<%-变量%>`
+Basic usage: `<%:=variable%>` or `<%-variable%>`
 
-例子：
+Example:
 
 ```html
 <title><%:=title%></title>
 <p><%-nickname%></p>
 ```
 
-#### URL 转义输出变量内容
+#### URL-escaped variable output
 
-对变量做 URL 转义，一般用于 URL 传参中。
+Applies URL escaping to variables, commonly used in URL parameters.
 
-基本用法：`<%:u=变量%>`
+Basic usage: `<%:u=variable%>`
 
-例子：
-
-```html
-<a href="https://domain.com/index?title=<%:u=title%>&nickname=<%:u=nickname%>">链接</a>
-```
-
-#### 转义 HTML 属性值后输出变量内容
-
-进行 HTML 属性值的转义输出，一般用于 HTML 属性值的安全输出。
-
-基本用法：`<%:v=变量%>`
-
-例子：
+Example:
 
 ```html
-<div data-title="<%:v=title%>" data-nickname="<%:v=nickname%>">内容</div>
+<a href="https://domain.com/index?title=<%:u=title%>&nickname=<%:u=nickname%>">Link</a>
 ```
 
-#### 转义输出数组
+#### HTML attribute escaped variable output
 
-迭代数组并做 HTML 转义输出。
+Escapes HTML attribute values for output, commonly used for safe output of HTML attribute values.
 
-基本用法：`<%:a=数组变量 | 分隔符%>`
+Basic usage: `<%:v=variable%>`
 
-分隔符可不写，默认值为 `<br>`
-
-例子：
+Example:
 
 ```html
-<div><%:a=listing%></div> <!-- 输出 <div>元素0<br>元素1<br>元素2<div> -->
-<div><%:a=listing|,%></div> <!-- 输出 <div>元素0,元素1,元素2<div> -->
+<div data-title="<%:v=title%>" data-nickname="<%:v=nickname%>">Content</div>
 ```
 
-#### 格式化钱数
+#### Escaped array output
 
-四舍五入保留两位小数输出变量内容。
+Iterates through arrays and outputs with HTML escaping.
 
-基本用法：`<%:m=变量%>`
+Basic usage: `<%:a=array_variable | separator%>`
 
-例子：
+Separator is optional, default value is `<br>`
+
+Example:
+
+```html
+<div><%:a=listing%></div> <!-- Outputs <div>element0<br>element1<br>element2<div> -->
+<div><%:a=listing|,%></div> <!-- Outputs <div>element0,element1,element2<div> -->
+```
+
+#### Money formatting
+
+Rounds to two decimal places and outputs variable content.
+
+Basic usage: `<%:m=variable%>`
+
+Example:
 
 ```html
 <div><%:m=money%></div>
 ```
 
-#### 内容截取
+#### Content truncation
 
-截取内容后输出变量，如果被截断自动在末尾添加 `...`，否则不添加。
+Truncates content and outputs variable. If truncated, automatically adds `...` at the end, otherwise doesn't add.
 
-基本用法：`<%:s=变量 | 保留字数%>`
+Basic usage: `<%:s=variable | character_count%>`
 
-例子：
+Example:
 
 ```html
 <div><%:s=title | 10%></div>
 ```
 
-#### URL 协议自适应
+#### URL protocol adaptation
 
-把 URL 处理成协议自适应格式，类似 `//domian.com/index`。
+Processes URLs into protocol-adaptive format, like `//domain.com/index`.
 
-基本用法：`<%:p=变量%>`
+Basic usage: `<%:p=variable%>`
 
-例子：
+Example:
 
 ```html
-<img src="<%:p=avatar%>" alt="头像">
+<img src="<%:p=avatar%>" alt="Avatar">
 ```
 
-#### 转义输出函数返回值
+#### Escaped function return value output
 
-用于转义输出函数返回值。
+Used for escaped output of function return values.
 
-基本用法：`<%:func=函数%>`
+Basic usage: `<%:func=function%>`
 
-例子：
+Example:
 
 ```html
 <p><%:func=getData()%></p>
 ```
 
-#### 不转义输出函数返回值
+#### Unescaped function return value output
 
-不转义输出函数返回值，慎用。
+Outputs function return values without escaping. Use with caution.
 
-基本用法：`<%:func-函数%>`
+Basic usage: `<%:func-function%>`
 
-例子：
+Example:
 
 ```html
 <p><%:func-getData()%></p>
 ```
 
-#### 定义变量
+#### Variable definition
 
-用于在模板作用域中定义变量。
+Used to define variables in template scope.
 
-基本用法：`<% let 变量名 = 变量值 %>`
+Basic usage: `<% let variable_name = variable_value %>`
 
-例子：
+Example:
 
 ```html
 <% let myData = '123' %>
 <p><%=myData%></p>
 ```
 
-#### 遍历数组
+#### Array iteration
 
-一般用于循环输出数组内容。
+Generally used for looping through and outputting array content.
 
-基本用法：
+Basic usage:
 
-* `<% foreach (循环变量 in 数组变量) %>循环体<% /foreach %>`
-* `<% foreach (循环变量 in 数组变量) %>循环体<% foreachelse %>数组为空时的内容<% /foreach %>`
+* `<% foreach (loop_variable in array_variable) %>loop_body<% /foreach %>`
+* `<% foreach (loop_variable in array_variable) %>loop_body<% foreachelse %>content_when_array_is_empty<% /foreach %>`
 
-如果需要获取数组下标，可以使用 `循环变量Index` 的形式获取。
+If you need to get the array index, you can use the form `loop_variableIndex`.
 
-例子：
+Example:
 
 ```html
 <ul>
   <% foreach (item in listing) %>
   <li><%=itemIndex%>: <%=item.nickname%></li>
   <% foreachelse %>
-  <li>暂无内容</li>
+  <li>No content available</li>
   <% /foreach %>
 </ul>
 ```
 
-#### 条件输出
+#### Conditional output
 
-用于根据不同条件输出不同内容
+Used to output different content based on different conditions
 
-基本用法：
+Basic usage:
 
-* `<% if (标准 js 条件表达式) %>条件为真时输出<% else %>条件为假时输出<% /if %>`
-* `<% if (标准 js 条件表达式) %>本条件为真时输出<% elseif (标准 js 条件表达式) %>本条件为真时输出<% else %>条件都不符合时输出<% /if %>`
+* `<% if (standard_js_conditional_expression) %>output_when_condition_is_true<% else %>output_when_condition_is_false<% /if %>`
+* `<% if (standard_js_conditional_expression) %>output_when_this_condition_is_true<% elseif (standard_js_conditional_expression) %>output_when_this_condition_is_true<% else %>output_when_no_conditions_match<% /if %>`
 
-例子：
+Example:
 
 ```html
 <div>
   <% if (nickname === 'name1') %>
-    <p>这是 name1</p>
+    <p>This is name1</p>
   <% elseif (nickname === 'name2') %>
-   <p>这是 name2</p>
+   <p>This is name2</p>
   <% elseif (nickname === 'name3') %>
-    <p>这是 name3</p>
+    <p>This is name3</p>
   <% else %>
-    <p>都不是</p>
+    <p>None of them</p>
   <% /if %>
 </div>
 ```
 
-#### 定义子模板
+#### Sub-template definition
 
-一般用于定义一个公共的模板部分，以方便重复使用
+Generally used to define a common template part for convenient reuse
 
-基本用法：`<% define 子模板名称(参数) %>子模板内容<% /define %>`
+Basic usage: `<% define sub_template_name(parameters) %>sub_template_content<% /define %>`
 
-其中 `参数` 为合法变量名，用于在子模板中接收外部参数
+Where `parameters` is a valid variable name, used to receive external parameters in the sub-template
 
-例子：
+Example:
 
 ```html
 <% define mySubTemplate(params) %>
@@ -612,14 +614,14 @@ myInstance.render(`<title><%=title%></title><p><%=nickname%></p>`, { title: '标
 <% /define %>
 ```
 
-#### 调用子模板
+#### Sub-template invocation
 
-调用已经定义的子模板
+Invokes an already defined sub-template
 
-基本用法：`<% run 子模板名称(参数对象) %>`
+Basic usage: `<% run sub_template_name(parameter_object) %>`
 
-例子：
+Example:
 
 ```html
-<% run mySubTemplate({ nickname: '昵称', title: '标题' }) %>
+<% run mySubTemplate({ nickname: 'Nickname', title: 'Title' }) %>
 ```
