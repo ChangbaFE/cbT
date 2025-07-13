@@ -18,6 +18,13 @@ npm run eslint
 # 运行所有测试
 npm test
 
+# 运行单个测试文件
+npm test -- test/index.test.js
+npm test -- test/helper.test.js
+npm test -- test/layout.test.js
+npm test -- test/lockfile.test.js
+npm test -- test/utils.test.js
+
 # 监听模式运行测试
 npm run test:watch
 
