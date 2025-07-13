@@ -2,7 +2,7 @@ import Layout from './lib/layout.js';
 import helpers from './lib/helper.js';
 import * as utils from './lib/utils.js';
 
-const VERSION = '2.0.0';
+const VERSION = '3.0.0';
 
 const TEMPLATE_OUT = '__templateOut__';
 const TEMPLATE_VAR_NAME = '__templateVarName__';
