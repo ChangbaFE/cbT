@@ -3,6 +3,14 @@
   "version": "1.3.9",
   "description": "唱吧模板引擎",
   "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "eslint": "eslint *.js",
     "test": "jest",
@@ -14,7 +22,14 @@
     "url": "git+https://github.com/ChangbaFE/cbT.git"
   },
   "keywords": [
-    "template"
+    "template",
+    "template-engine", 
+    "changba",
+    "cbT",
+    "server-side-template",
+    "template-inheritance",
+    "html-template",
+    "node-template"
   ],
   "author": "Hex",
   "license": "MIT",
@@ -24,6 +39,7 @@
   "homepage": "https://github.com/ChangbaFE/cbT#readme",
   "devDependencies": {
     "eslint": "^6.8.0",
-    "jest": "^30.0.4"
+    "jest": "^30.0.4",
+    "typescript": "^5.8.3"
   }
 }
