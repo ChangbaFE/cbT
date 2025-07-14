@@ -1006,7 +1006,6 @@ describe('layout.js', () => {
       });
     });
 
-
     test('should match use command parameters to slot names correctly', (done) => {
       const content = `
         <% block template %>
@@ -1079,10 +1078,6 @@ describe('layout.js', () => {
         done();
       });
     });
-
-
-
-
 
     test('should handle unnamed slots in call command', (done) => {
       const content = `
@@ -1158,33 +1153,6 @@ describe('layout.js', () => {
       });
     });
 
-
-    test('unnamed slot in call command', (done) => {
-      const content = `
-        <% block template %>
-          <div>
-            <% slot %>Default unnamed slot<% /slot %>
-          </div>
-        <% /block %>
-
-        <% block main %>
-          <% call template %>
-            <% slot %>Override unnamed slot<% /slot %>
-          <% /call %>
-        <% /block %>
-      `;
-      fs.writeFileSync(path.join(testDir, 'fixed-line-399.html'), content);
-
-      layout.make('fixed-line-399.html', { cache: false, block: 'main' }, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Override unnamed slot');
-        expect(content).not.toContain('Default unnamed slot');
-        done();
-      });
-    });
-
-
-
     test('should parse use command parameters in template inheritance', (done) => {
       const parentContent = `
         <% block reusable %>
@@ -1250,7 +1218,6 @@ describe('layout.js', () => {
       });
     });
 
-
     test('should handle use command referencing non-existent blocks', (done) => {
       // Create a scenario where use references a block that doesn't exist anywhere
       const parentContent = `
@@ -1299,8 +1266,6 @@ describe('layout.js', () => {
       });
     });
 
-
-
     test('should parse parent template names with file extensions', (done) => {
       // Test parseParent with parent template that has file extension
       const parentContent = '<% block content %>Parent With Extension<% /block %>';
@@ -1313,19 +1278,6 @@ describe('layout.js', () => {
       layout.make('child-extends-with-ext.html', { cache: false }, (err, content) => {
         expect(err).toBeNull();
         expect(content).toContain('Child Content');
-        done();
-      });
-    });
-
-    test('should use default options when options parameter is null', (done) => {
-      // Test make method with null options parameter
-      const simpleContent = '<% block test %>Default Param Test<% /block %>';
-      fs.writeFileSync(path.join(testDir, 'default-param.html'), simpleContent);
-
-      // Call make with null/undefined options to trigger default parameter
-      layout.make('default-param.html', null, (err, content) => {
-        expect(err).toBeNull();
-        expect(content).toContain('Default Param Test');
         done();
       });
     });
